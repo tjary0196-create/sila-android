@@ -2,15 +2,13 @@ package com.sila.messaging.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.material3.Text
-import androidx.compose.material3.Button
-import androidx.compose.material3.Column
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.compose.navArgument
+import androidx.navigation.navArgument
 import com.sila.messaging.data.AuthViewModel
 import androidx.compose.runtime.rememberCoroutineScope
 import com.sila.messaging.data.UserRepository
