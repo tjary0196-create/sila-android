@@ -1,0 +1,54 @@
+name: Android CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Prepare Firebase credentials and local.properties from GitHub Secrets
+        env:
+          FIREBASE_JSON: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
+          FIREBASE_WEB_CLIENT_ID: ${{ secrets.FIREBASE_WEB_CLIENT_ID }}
+        run: |
+          if [ -z "$FIREBASE_JSON" ]; then
+            echo "Missing FIREBASE_GOOGLE_SERVICES_JSON secret."
+            exit 1
+          fi
+          if [ -z "$FIREBASE_WEB_CLIENT_ID" ]; then
+            echo "Missing FIREBASE_WEB_CLIENT_ID secret."
+            exit 1
+          fi
+
+          mkdir -p app
+          printf '%s' "$FIREBASE_JSON" > app/google-services.json
+          echo "Wrote app/google-services.json from secret."
+
+          printf 'FIREBASE_WEB_CLIENT_ID=%s\n' "$FIREBASE_WEB_CLIENT_ID" > local.properties
+          echo "Wrote local.properties with FIREBASE_WEB_CLIENT_ID."
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: 8.2
+
+      - name: Build Debug APK
+        run: gradle assembleDebug --no-daemon
+        env:
+          JAVA_TOOL_OPTIONS: "-Xmx2g"
