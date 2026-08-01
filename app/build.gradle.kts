@@ -15,7 +15,7 @@ val webClientId: String = localProps.getProperty("FIREBASE_WEB_CLIENT_ID", "")
 
 val composeVersion = "1.5.0"
 val material3Version = "1.1.0"
-val kotlinVersion = "1.9.10"
+val kotlinVersion = "1.9.20"
 val firebaseBom = "31.5.0"
 
 android {
