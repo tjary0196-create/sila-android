@@ -167,7 +167,8 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                             searchQuery = it
                             isSearchActive = it.isNotEmpty()
                         },
-                        placeholder = "بحث بالمحادثات..."
+                        placeholder = "بحث بالمحادثات...",
+                        modifier = Modifier.weight(1f)
                     )
                     if (searchQuery.isNotEmpty()) {
                         Icon(
@@ -331,8 +332,13 @@ private fun ComingSoonPlaceholder(modifier: Modifier = Modifier, text: String) {
 }
 
 @Composable
-private fun BasicSearchField(value: String, onValueChange: (String) -> Unit, placeholder: String) {
-    Box(modifier = Modifier.weight(1f)) {
+private fun BasicSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
         androidx.compose.foundation.text.BasicTextField(
             value = value,
             onValueChange = onValueChange,
