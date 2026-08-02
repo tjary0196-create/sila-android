@@ -1,9 +1,12 @@
 package com.sila.messaging.data
 
+import android.net.Uri
 import android.util.Log
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.tasks.await
 
 data class UserProfile(
@@ -11,6 +14,14 @@ data class UserProfile(
     val username: String = "",
     val displayName: String? = null,
     val photoUrl: String? = null,
+    val bio: String? = null,
+    val birthDate: String? = null,
+    val country: String? = null,
+    val status: String = "online",
+    val showBio: Boolean = true,
+    val showBirthDate: Boolean = true,
+    val showCountry: Boolean = true,
+    val showLastSeen: Boolean = true,
     val createdAt: com.google.firebase.Timestamp? = null
 )
 
@@ -72,5 +83,16 @@ class UserRepository {
             result.add(Pair(uname, uid))
         }
         return result
+    }
+
+    suspend fun updateProfile(uid: String, updates: Map<String, Any?>) {
+        usersColl.document(uid).set(updates, SetOptions.merge()).await()
+        publicProfilesColl.document(uid).set(updates, SetOptions.merge()).await()
+    }
+
+    suspend fun uploadProfilePhoto(uid: String, uri: Uri): String {
+        val ref = Firebase.storage.reference.child("profilePhotos/$uid/photo.jpg")
+        ref.putFile(uri).await()
+        return ref.downloadUrl.await().toString()
     }
 }
