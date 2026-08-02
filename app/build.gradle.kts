@@ -14,6 +14,7 @@ if (localPropsFile.exists()) {
 val webClientId: String = localProps.getProperty("FIREBASE_WEB_CLIENT_ID", "")
 
 val composeVersion = "1.5.0"
+val iconsVersion = "1.6.7"
 val material3Version = "1.1.0"
 val kotlinVersion = "1.9.20"
 val firebaseBom = "31.5.0"
@@ -58,8 +59,8 @@ dependencies {
 
     implementation("androidx.compose.ui:ui:$composeVersion")
     implementation("androidx.compose.material3:material3:$material3Version")
-    implementation("androidx.compose.material:material-icons-core:$composeVersion")
-    implementation("androidx.compose.material:material-icons-extended:$composeVersion")
+    implementation("androidx.compose.material:material-icons-core:$iconsVersion")
+    implementation("androidx.compose.material:material-icons-extended:$iconsVersion")
     implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
     debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
 
