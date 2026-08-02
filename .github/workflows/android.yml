@@ -67,11 +67,17 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: 8.2
+          cache-disabled: true
 
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon
+        run: gradle clean assembleDebug --no-daemon --no-build-cache --rerun-tasks
         env:
           JAVA_TOOL_OPTIONS: "-Xmx2g"
+
+      - name: Verify signing certificate
+        run: |
+          echo "===== Certificate actually used to sign app-debug.apk ====="
+          keytool -printcert -jarfile app/build/outputs/apk/debug/app-debug.apk | grep -A1 "Owner\|SHA1"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
