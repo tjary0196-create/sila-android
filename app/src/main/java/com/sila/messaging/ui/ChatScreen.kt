@@ -37,7 +37,7 @@ fun ChatScreen(otherUid: String, onBack: () -> Unit) {
     LaunchedEffect(otherUid) {
         val profile = userRepo.getPublicProfile(otherUid)
         if (profile != null) otherName = profile.username
-        val chatId = repo.chatIdFor(me, otherUid)
+        val chatId = repo.getOrCreateChat(me, otherUid)
         repo.messagesListener(chatId).collectLatest { list -> messages.value = list }
     }
 
@@ -71,10 +71,12 @@ fun ChatScreen(otherUid: String, onBack: () -> Unit) {
                 IconButton(
                     onClick = {
                         if (text.isBlank()) return@IconButton
-                        val chatId = repo.chatIdFor(me, otherUid)
                         val toSend = text
                         text = ""
-                        scope.launch { repo.sendMessage(chatId, me, toSend) }
+                        scope.launch {
+                            val chatId = repo.getOrCreateChat(me, otherUid)
+                            repo.sendMessage(chatId, me, toSend)
+                        }
                     },
                     modifier = Modifier.size(48.dp)
                         .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(24.dp))
