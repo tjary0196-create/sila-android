@@ -48,6 +48,7 @@ jobs:
         env:
           FIREBASE_JSON: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
           FIREBASE_WEB_CLIENT_ID: ${{ secrets.FIREBASE_WEB_CLIENT_ID }}
+          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
         run: |
           if [ -z "$FIREBASE_JSON" ]; then
             echo "Missing FIREBASE_GOOGLE_SERVICES_JSON secret."
@@ -63,7 +64,8 @@ jobs:
           echo "Wrote app/google-services.json from secret."
 
           printf 'FIREBASE_WEB_CLIENT_ID=%s\n' "$FIREBASE_WEB_CLIENT_ID" > local.properties
-          echo "Wrote local.properties with FIREBASE_WEB_CLIENT_ID."
+          printf 'IMGBB_API_KEY=%s\n' "$IMGBB_API_KEY" >> local.properties
+          echo "Wrote local.properties with FIREBASE_WEB_CLIENT_ID and IMGBB_API_KEY."
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
