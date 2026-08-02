@@ -47,7 +47,8 @@ fun AppNavHost(onGoogleSignInClicked: () -> Unit, authViewModel: AuthViewModel) 
         composable("chats") {
             ChatsScreen(
                 onOpenChat = { otherUid -> navController.navigate("chat/$otherUid") },
-                onSearchClick = { navController.navigate("search") }
+                onSearchClick = { navController.navigate("search") },
+                onProfileClick = { navController.navigate("profileSettings") }
             )
         }
 
@@ -64,6 +65,10 @@ fun AppNavHost(onGoogleSignInClicked: () -> Unit, authViewModel: AuthViewModel) 
                 onStartChat = { otherUid -> navController.navigate("chat/$otherUid") { popUpTo("chats") } },
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable("profileSettings") {
+            ProfileSettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }
