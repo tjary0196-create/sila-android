@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.sila.messaging.data.Chat
 import com.sila.messaging.data.ChatRepository
@@ -25,21 +27,51 @@ import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit) {
+fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfileClick: () -> Unit) {
     val repo = remember { ChatRepository() }
     val userRepo = remember { UserRepository() }
     val auth = FirebaseAuth.getInstance()
     val uid = auth.currentUser?.uid ?: return
     val chats = remember { mutableStateOf<List<Chat>>(emptyList()) }
+    var myPhotoUrl by remember { mutableStateOf<String?>(null) }
+    var myDisplayName by remember { mutableStateOf("") }
 
     LaunchedEffect(uid) {
         repo.chatsForUserListener(uid).collectLatest { list -> chats.value = list }
+    }
+
+    LaunchedEffect(uid) {
+        val profile = userRepo.getUserProfile(uid)
+        myPhotoUrl = profile?.photoUrl
+        myDisplayName = profile?.displayName ?: ""
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("صلة", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                            .clickable { onProfileClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!myPhotoUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = myPhotoUrl,
+                                contentDescription = "ملفي الشخصي",
+                                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Text(myDisplayName.take(1).uppercase().ifBlank { "؟" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
