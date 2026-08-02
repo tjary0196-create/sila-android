@@ -12,6 +12,7 @@ if (localPropsFile.exists()) {
     localProps.load(localPropsFile.inputStream())
 }
 val webClientId: String = localProps.getProperty("FIREBASE_WEB_CLIENT_ID", "")
+val imgbbApiKey: String = localProps.getProperty("IMGBB_API_KEY", "")
 
 val composeVersion = "1.5.0"
 val iconsVersion = "1.6.7"
@@ -30,6 +31,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         buildConfigField("String", "WEB_CLIENT_ID", "\"$webClientId\"")
+        buildConfigField("String", "IMGBB_API_KEY", "\"$imgbbApiKey\"")
     }
 
     buildTypes {
@@ -74,4 +76,7 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-auth:21.4.0")
     implementation("com.google.code.gson:gson:2.10.1")
+
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
