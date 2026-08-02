@@ -22,9 +22,12 @@ class UserRepository {
 
     suspend fun getUserProfile(uid: String): UserProfile? {
         val doc = usersColl.document(uid).get().await()
-        return if (doc.exists()) {
-            doc.toObject(UserProfile::class.java)
-        } else null
+        return if (doc.exists()) doc.toObject(UserProfile::class.java) else null
+    }
+
+    suspend fun getPublicProfile(uid: String): UserProfile? {
+        val doc = publicProfilesColl.document(uid).get().await()
+        return if (doc.exists()) doc.toObject(UserProfile::class.java) else null
     }
 
     suspend fun claimUsername(uid: String, username: String, displayName: String?, photoUrl: String?): Boolean {
@@ -32,27 +35,18 @@ class UserRepository {
             firestore.runTransaction { transaction ->
                 val usernameDocRef = usernamesColl.document(username)
                 val usernameSnapshot = transaction.get(usernameDocRef)
-                if (usernameSnapshot.exists()) {
-                    throw IllegalStateException("username_taken")
-                }
-                transaction.set(usernameDocRef, mapOf(
-                    "uid" to uid,
-                    "createdAt" to FieldValue.serverTimestamp()
-                ))
+                if (usernameSnapshot.exists()) throw IllegalStateException("username_taken")
+                transaction.set(usernameDocRef, mapOf("uid" to uid, "createdAt" to FieldValue.serverTimestamp()))
                 val userRef = usersColl.document(uid)
                 transaction.set(userRef, mapOf(
-                    "uid" to uid,
-                    "username" to username,
-                    "displayName" to (displayName ?: ""),
-                    "photoUrl" to (photoUrl ?: ""),
+                    "uid" to uid, "username" to username,
+                    "displayName" to (displayName ?: ""), "photoUrl" to (photoUrl ?: ""),
                     "createdAt" to FieldValue.serverTimestamp()
                 ))
                 val publicRef = publicProfilesColl.document(uid)
                 transaction.set(publicRef, mapOf(
-                    "uid" to uid,
-                    "username" to username,
-                    "displayName" to (displayName ?: ""),
-                    "photoUrl" to (photoUrl ?: ""),
+                    "uid" to uid, "username" to username,
+                    "displayName" to (displayName ?: ""), "photoUrl" to (photoUrl ?: ""),
                     "createdAt" to FieldValue.serverTimestamp()
                 ))
                 null
@@ -70,9 +64,7 @@ class UserRepository {
         val querySnapshot = usernamesColl
             .whereGreaterThanOrEqualTo("__name__", prefix)
             .whereLessThanOrEqualTo("__name__", end)
-            .limit(limit)
-            .get()
-            .await()
+            .limit(limit).get().await()
         val result = mutableListOf<Pair<String, String>>()
         for (doc in querySnapshot.documents) {
             val uname = doc.id
