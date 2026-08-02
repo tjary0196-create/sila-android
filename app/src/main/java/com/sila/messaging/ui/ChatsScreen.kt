@@ -3,38 +3,38 @@ package com.sila.messaging.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.sila.messaging.data.Chat
 import com.sila.messaging.data.ChatRepository
 import com.sila.messaging.data.UserProfile
 import com.sila.messaging.data.UserRepository
+import com.sila.messaging.ui.components.SilaAvatar
+import com.sila.messaging.ui.components.SilaChatRow
+import com.sila.messaging.ui.components.SilaEmptyState
+import com.sila.messaging.ui.components.SilaErrorState
+import com.sila.messaging.ui.components.SilaLoading
+import com.sila.messaging.ui.components.SilaSearchBar
+import com.sila.messaging.ui.components.SilaTopBar
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -61,14 +61,28 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
     var myDisplayName by remember { mutableStateOf("") }
 
     var searchQuery by remember { mutableStateOf("") }
-    var isSearchActive by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) }
     var screenVisible by remember { mutableStateOf(false) }
 
+    // حالتا التحميل والخطأ (UI فقط) — لا تغيّران مصدر البيانات، فقط تعكسان حالته
+    var isLoadingChats by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+    var reloadTrigger by remember { mutableStateOf(0) }
+
     LaunchedEffect(Unit) { screenVisible = true }
 
-    LaunchedEffect(uid) {
-        repo.chatsForUserListener(uid).collectLatest { list -> rawChats.value = list }
+    LaunchedEffect(uid, reloadTrigger) {
+        isLoadingChats = true
+        loadError = null
+        repo.chatsForUserListener(uid)
+            .catch { e ->
+                loadError = e.localizedMessage ?: "تعذر تحميل المحادثات"
+                isLoadingChats = false
+            }
+            .collectLatest { list ->
+                rawChats.value = list
+                isLoadingChats = false
+            }
     }
 
     LaunchedEffect(uid) {
@@ -119,69 +133,28 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                TopAppBar(
-                    title = { Text("الرسائل", fontWeight = FontWeight.Bold, fontSize = 22.sp) },
+                SilaTopBar(
+                    title = "الرسائل",
                     navigationIcon = {
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 12.dp)
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
-                                .clickable { onProfileClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (!myPhotoUrl.isNullOrBlank()) {
-                                AsyncImage(
-                                    model = myPhotoUrl,
-                                    contentDescription = "ملفي الشخصي",
-                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Text(
-                                    myDisplayName.take(1).uppercase().ifBlank { "؟" },
-                                    color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp
-                                )
-                            }
+                        Box(modifier = Modifier.padding(start = 12.dp)) {
+                            SilaAvatar(
+                                name = myDisplayName,
+                                photoUrl = myPhotoUrl,
+                                seed = uid,
+                                size = 38.dp,
+                                onClick = onProfileClick
+                            )
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    containerColor = Color.Transparent
                 )
 
-                // شريط بحث حديث بحواف مدورة
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.Search, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    BasicSearchField(
-                        value = searchQuery,
-                        onValueChange = {
-                            searchQuery = it
-                            isSearchActive = it.isNotEmpty()
-                        },
-                        placeholder = "بحث بالمحادثات...",
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (searchQuery.isNotEmpty()) {
-                        Icon(
-                            Icons.Filled.Close,
-                            contentDescription = "مسح",
-                            tint = Color.Gray,
-                            modifier = Modifier.size(18.dp).clickable {
-                                searchQuery = ""
-                                isSearchActive = false
-                            }
-                        )
-                    }
-                }
+                SilaSearchBar(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = "بحث بالمحادثات...",
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)
+                )
 
                 // تبويبات All / Unread / Requests
                 TabRow(
@@ -206,9 +179,9 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                 onClick = onSearchClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape,
-                modifier = Modifier.shadow(elevation = 8.dp, shape = CircleShape)
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
             ) {
-                Icon(Icons.Filled.Edit, contentDescription = "محادثة جديدة", tint = Color.White)
+                Icon(Icons.Filled.Edit, contentDescription = "محادثة جديدة", tint = MaterialTheme.colorScheme.onPrimary)
             }
         }
     ) { padding ->
@@ -216,107 +189,57 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
             visible = screenVisible,
             enter = fadeIn(animationSpec = tween(300))
         ) {
-            when (selectedTab) {
-                1, 2 -> ComingSoonPlaceholder(
+            when {
+                selectedTab == 1 || selectedTab == 2 -> ComingSoonPlaceholder(
                     modifier = Modifier.fillMaxSize().padding(padding),
                     text = if (selectedTab == 1) "ميزة الرسائل غير المقروءة قريباً" else "ميزة طلبات المراسلة قريباً"
                 )
-                else -> {
-                    if (filteredChats.isEmpty()) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(padding),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                if (searchQuery.isBlank()) "ما في محادثات بعد" else "ما في نتائج مطابقة",
-                                fontSize = 16.sp, color = Color.Gray
-                            )
-                            if (searchQuery.isBlank()) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("دوس على زر التعديل لتبلش محادثة جديدة", fontSize = 13.sp, color = Color.Gray)
-                            }
-                        }
+                loadError != null -> SilaErrorState(
+                    message = loadError ?: "تعذر تحميل المحادثات",
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    onRetry = { reloadTrigger++ }
+                )
+                isLoadingChats -> SilaLoading(
+                    modifier = Modifier.fillMaxSize().padding(padding)
+                )
+                filteredChats.isEmpty() -> {
+                    if (searchQuery.isBlank()) {
+                        SilaEmptyState(
+                            icon = Icons.Filled.Chat,
+                            title = "ما في محادثات بعد",
+                            subtitle = "دوس على زر التعديل لتبلش محادثة جديدة",
+                            modifier = Modifier.fillMaxSize().padding(padding)
+                        )
                     } else {
-                        LazyColumn(modifier = Modifier.padding(padding)) {
-                            itemsIndexed(filteredChats, key = { _, item -> item.chat.id }) { _, item ->
-                                ChatRow(item = item, onClick = { onOpenChat(item.otherUid) })
-                                Divider(
-                                    color = MaterialTheme.colorScheme.outline,
-                                    thickness = 0.5.dp,
-                                    modifier = Modifier.padding(start = 80.dp)
-                                )
-                            }
+                        SilaEmptyState(
+                            icon = Icons.Filled.SearchOff,
+                            title = "ما في نتائج مطابقة",
+                            modifier = Modifier.fillMaxSize().padding(padding)
+                        )
+                    }
+                }
+                else -> {
+                    LazyColumn(modifier = Modifier.padding(padding)) {
+                        itemsIndexed(filteredChats, key = { _, item -> item.chat.id }) { _, item ->
+                            SilaChatRow(
+                                displayName = item.displayName,
+                                username = item.username,
+                                photoUrl = item.photoUrl,
+                                lastMessage = item.chat.lastMessage?.takeIf { it.isNotBlank() } ?: "ابدأ المحادثة",
+                                timeLabel = formatChatTime(item.chat.updatedAt?.toDate()),
+                                isOnline = item.isOnline,
+                                onClick = { onOpenChat(item.otherUid) }
+                            )
+                            Divider(
+                                color = MaterialTheme.colorScheme.outline,
+                                thickness = 0.5.dp,
+                                modifier = Modifier.padding(start = 84.dp)
+                            )
                         }
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ChatRow(item: ChatUiState, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(contentAlignment = Alignment.BottomEnd) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                if (!item.photoUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = item.photoUrl,
-                        contentDescription = item.displayName,
-                        modifier = Modifier.fillMaxSize().clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Text(
-                        item.displayName.take(1).uppercase(),
-                        color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp
-                    )
-                }
-            }
-            if (item.isOnline) {
-                Box(
-                    modifier = Modifier
-                        .size(14.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(2.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF34C759))
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(item.displayName, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            if (item.username.isNotBlank()) {
-                Text("@${item.username}", fontSize = 12.sp, color = Color.Gray)
-            }
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                item.chat.lastMessage?.takeIf { it.isNotBlank() } ?: "ابدأ المحادثة",
-                fontSize = 13.sp, color = Color.Gray, maxLines = 1
-            )
-        }
-
-        Text(
-            formatChatTime(item.chat.updatedAt?.toDate()),
-            fontSize = 11.sp, color = Color.Gray
-        )
     }
 }
 
@@ -327,36 +250,35 @@ private fun ComingSoonPlaceholder(modifier: Modifier = Modifier, text: String) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text, fontSize = 15.sp, color = Color.Gray)
+        Text(text, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
-@Composable
-private fun BasicSearchField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier) {
-        androidx.compose.foundation.text.BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = true,
-            textStyle = androidx.compose.ui.text.TextStyle(
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onBackground
-            ),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary)
-        )
-        if (value.isEmpty()) {
-            Text(placeholder, fontSize = 14.sp, color = Color.Gray)
-        }
-    }
-}
-
+/**
+ * تنسيق وقت آخر رسالة: الساعة لليوم الحالي، "أمس" لأمس، اسم اليوم لآخر أسبوع،
+ * وإلا التاريخ الكامل. تحسين عرض فقط، لا يغيّر أي بيانات.
+ */
 private fun formatChatTime(date: Date?): String {
     if (date == null) return ""
-    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-    return sdf.format(date)
+    val now = Calendar.getInstance()
+    val target = Calendar.getInstance().apply { time = date }
+
+    val isSameDay = now.get(Calendar.YEAR) == target.get(Calendar.YEAR) &&
+        now.get(Calendar.DAY_OF_YEAR) == target.get(Calendar.DAY_OF_YEAR)
+
+    if (isSameDay) {
+        return SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
+    }
+
+    val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+    val isYesterday = yesterday.get(Calendar.YEAR) == target.get(Calendar.YEAR) &&
+        yesterday.get(Calendar.DAY_OF_YEAR) == target.get(Calendar.DAY_OF_YEAR)
+    if (isYesterday) return "أمس"
+
+    val diffDays = ((now.timeInMillis - target.timeInMillis) / (1000 * 60 * 60 * 24)).toInt()
+    if (diffDays in 2..6) {
+        return SimpleDateFormat("EEEE", Locale("ar")).format(date)
+    }
+
+    return SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
 }
