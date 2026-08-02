@@ -1,13 +1,23 @@
 package com.sila.messaging.data
 
+import android.content.Context
 import android.net.Uri
+import android.util.Base64
 import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.ktx.storage
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import org.json.JSONObject
+import java.io.IOException
 
 data class UserProfile(
     val uid: String = "",
@@ -30,6 +40,7 @@ class UserRepository {
     private val usersColl = firestore.collection("users")
     private val usernamesColl = firestore.collection("usernames")
     private val publicProfilesColl = firestore.collection("publicProfiles")
+    private val httpClient = OkHttpClient()
 
     suspend fun getUserProfile(uid: String): UserProfile? {
         val doc = usersColl.document(uid).get().await()
@@ -90,9 +101,38 @@ class UserRepository {
         publicProfilesColl.document(uid).set(updates, SetOptions.merge()).await()
     }
 
-    suspend fun uploadProfilePhoto(uid: String, uri: Uri): String {
-        val ref = Firebase.storage.reference.child("profilePhotos/$uid/photo.jpg")
-        ref.putFile(uri).await()
-        return ref.downloadUrl.await().toString()
+    suspend fun uploadProfilePhoto(context: Context, uri: Uri, apiKey: String): String {
+        if (apiKey.isBlank()) throw IllegalStateException("imgbb_api_key_missing")
+        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw IllegalStateException("cannot_read_image")
+        val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+
+        val requestBody = FormBody.Builder()
+            .add("key", apiKey)
+            .add("image", base64)
+            .build()
+        val request = Request.Builder()
+            .url("https://api.imgbb.com/1/upload")
+            .post(requestBody)
+            .build()
+
+        return suspendCancellableCoroutine { cont ->
+            httpClient.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    cont.resumeWith(Result.failure(e))
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    try {
+                        val body = response.body?.string() ?: throw IllegalStateException("empty_response")
+                        val json = JSONObject(body)
+                        if (!json.optBoolean("success", false)) throw IllegalStateException("upload_failed")
+                        val url = json.getJSONObject("data").getString("url")
+                        cont.resumeWith(Result.success(url))
+                    } catch (e: Exception) {
+                        cont.resumeWith(Result.failure(e))
+                    }
+                }
+            })
+        }
     }
 }
