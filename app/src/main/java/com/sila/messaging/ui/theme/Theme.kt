@@ -7,46 +7,77 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-val TelegramBlue = Color(0xFF0088CC)
-val SentBubble = Color(0xFFE3F2FD)
-val ReceivedBubble = Color(0xFFF1F1F1)
-
-val SentBubbleDark = Color(0xFF1E3A5F)
-val ReceivedBubbleDark = Color(0xFF2A2A2A)
-
 private val SilaLightColors = lightColorScheme(
-    primary = TelegramBlue,
+    primary = SilaPrimaryLight,
     onPrimary = Color.White,
-    primaryContainer = SentBubble,
-    onPrimaryContainer = Color(0xFF1A1A1A),
-    background = Color.White,
-    onBackground = Color(0xFF1A1A1A),
-    surface = Color.White,
-    onSurface = Color(0xFF1A1A1A),
-    surfaceVariant = ReceivedBubble,
-    onSurfaceVariant = Color(0xFF1A1A1A),
-    outline = Color(0xFFE0E0E0)
+    primaryContainer = SilaBubbleSentLight,
+    onPrimaryContainer = SilaTextPrimaryLight,
+
+    secondary = SilaSecondaryLight,
+    onSecondary = Color.White,
+
+    tertiary = SilaAccentLight,
+    onTertiary = Color.White,
+
+    error = SilaError,
+    onError = Color.White,
+
+    background = SilaBackgroundLight,
+    onBackground = SilaTextPrimaryLight,
+
+    surface = SilaSurfaceLight,
+    onSurface = SilaTextPrimaryLight,
+
+    surfaceVariant = SilaSurfaceVariantLight,
+    onSurfaceVariant = SilaTextSecondaryLight,
+
+    outline = SilaDividerLight,
+    outlineVariant = SilaDividerLight
 )
 
 private val SilaDarkColors = darkColorScheme(
-    primary = TelegramBlue,
-    onPrimary = Color.White,
-    primaryContainer = SentBubbleDark,
-    onPrimaryContainer = Color(0xFFECECEC),
-    background = Color(0xFF121212),
-    onBackground = Color(0xFFECECEC),
-    surface = Color(0xFF1C1C1E),
-    onSurface = Color(0xFFECECEC),
-    surfaceVariant = ReceivedBubbleDark,
-    onSurfaceVariant = Color(0xFFB0B0B0),
-    outline = Color(0xFF3A3A3C)
+    primary = SilaPrimaryDark,
+    onPrimary = Color(0xFF0D0E12),
+    primaryContainer = SilaBubbleSentDark,
+    onPrimaryContainer = SilaTextPrimaryDark,
+
+    secondary = SilaSecondaryDark,
+    onSecondary = Color(0xFF0D0E12),
+
+    tertiary = SilaAccentDark,
+    onTertiary = Color(0xFF0D0E12),
+
+    error = SilaErrorDark,
+    onError = Color(0xFF0D0E12),
+
+    background = SilaBackgroundDark,
+    onBackground = SilaTextPrimaryDark,
+
+    surface = SilaSurfaceDark,
+    onSurface = SilaTextPrimaryDark,
+
+    surfaceVariant = SilaSurfaceVariantDark,
+    onSurfaceVariant = SilaTextSecondaryDark,
+
+    outline = SilaDividerDark,
+    outlineVariant = SilaDividerDark
 )
 
+/**
+ * App-wide theme wrapper. Signature is intentionally unchanged
+ * (`SilaTheme(darkTheme, content)`) so no caller (MainActivity) needs to
+ * change — only the color/typography/shape values it resolves to are new.
+ */
 @Composable
 fun SilaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
     val colors = if (darkTheme) SilaDarkColors else SilaLightColors
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(
+        colorScheme = colors,
+        typography = SilaTypography,
+        shapes = SilaShapes,
+        content = content
+    )
 }
