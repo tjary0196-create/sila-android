@@ -23,6 +23,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import kotlin.math.abs
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import com.sila.messaging.ui.theme.rememberPulseScale
 
 /**
  * Curated gradient pairs used to give each user a consistent, premium-looking
@@ -66,6 +70,7 @@ fun SilaAvatar(
             modifier = Modifier
                 .size(size)
                 .clip(CircleShape)
+                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
                 .background(gradientFor(seed.ifBlank { name }))
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
             contentAlignment = Alignment.Center
@@ -101,15 +106,34 @@ fun SilaAvatar(
         }
 
         if (isOnline) {
+            val pulse = rememberPulseScale(minScale = 0.8f, maxScale = 1.6f, periodMs = 1600)
             Box(
-                modifier = Modifier
-                    .size(size * 0.28f)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(2.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF34C759))
-            )
+                modifier = Modifier.size(size * 0.4f),
+                contentAlignment = Alignment.Center
+            ) {
+                // Expanding, fading ring behind the solid dot — a soft "heartbeat"
+                // signalling live presence, purely decorative (no hit target).
+                Box(
+                    modifier = Modifier
+                        .size(size * 0.28f)
+                        .graphicsLayer {
+                            scaleX = pulse; scaleY = pulse
+                            alpha = (1.7f - pulse).coerceIn(0f, 0.55f)
+                            compositingStrategy = CompositingStrategy.Offscreen
+                        }
+                        .clip(CircleShape)
+                        .background(Color(0xFF34C759))
+                )
+                Box(
+                    modifier = Modifier
+                        .size(size * 0.28f)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF34C759))
+                )
+            }
         }
     }
 }
