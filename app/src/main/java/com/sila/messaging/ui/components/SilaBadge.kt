@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.scale
+import com.sila.messaging.ui.theme.rememberPulseScale
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -54,9 +56,11 @@ fun SilaBadge(
 fun SilaVerificationBadge(
     modifier: Modifier = Modifier,
     size: Dp = 18.dp,
-    seedColor: Color = MaterialTheme.colorScheme.primary
+    seedColor: Color = MaterialTheme.colorScheme.primary,
+    animated: Boolean = true
 ) {
-    Canvas(modifier = modifier.size(size)) {
+    val pulse = if (animated) rememberPulseScale(minScale = 0.94f, maxScale = 1.06f, periodMs = 1800) else 1f
+    Canvas(modifier = modifier.size(size).scale(pulse)) {
         val cx = this.size.width / 2f
         val cy = this.size.height / 2f
         val outerR = this.size.minDimension / 2f
