@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sila.messaging.ui.theme.SilaRadius
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
+import com.sila.messaging.ui.theme.pressScale
 
 /**
  * Outlined counterpart to [SilaPrimaryButton] — used for secondary actions
@@ -38,10 +41,12 @@ fun SilaSecondaryButton(
     loading: Boolean = false,
     icon: ImageVector? = null
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     OutlinedButton(
         onClick = onClick,
         enabled = enabled && !loading,
-        modifier = modifier.fillMaxWidth().height(50.dp),
+        interactionSource = interactionSource,
+        modifier = modifier.fillMaxWidth().height(50.dp).pressScale(interactionSource, pressedScale = 0.96f),
         shape = RoundedCornerShape(SilaRadius.sm),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         colors = ButtonDefaults.outlinedButtonColors(
