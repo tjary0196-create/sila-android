@@ -17,8 +17,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,8 +40,13 @@ fun SilaErrorState(
     modifier: Modifier = Modifier,
     onRetry: (() -> Unit)? = null
 ) {
+    val entrance = remember { Animatable(0.75f) }
+    LaunchedEffect(Unit) {
+        entrance.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+    }
+
     Column(
-        modifier = modifier.fillMaxSize().padding(32.dp),
+        modifier = modifier.fillMaxSize().padding(32.dp).scale(entrance.value),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
