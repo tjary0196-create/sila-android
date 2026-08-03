@@ -12,12 +12,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,14 +27,17 @@ import com.google.firebase.auth.FirebaseAuth
 import com.sila.messaging.BuildConfig
 import com.sila.messaging.data.LocationUtils
 import com.sila.messaging.data.UserRepository
-import com.sila.messaging.ui.components.SilaAvatar
 import com.sila.messaging.ui.components.SilaLoading
 import com.sila.messaging.ui.components.SilaPrimaryButton
+import com.sila.messaging.ui.components.SilaProfileHeader
 import com.sila.messaging.ui.components.SilaSectionCard
 import com.sila.messaging.ui.components.SilaSettingRow
 import com.sila.messaging.ui.components.SilaSettingTextField
 import com.sila.messaging.ui.components.SilaSettingToggle
+import com.sila.messaging.ui.components.SilaStatusChip
+import com.sila.messaging.ui.components.SilaStatusDots
 import com.sila.messaging.ui.components.SilaTopBar
+import com.sila.messaging.ui.theme.SilaSpacing
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -165,21 +168,20 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = SilaSpacing.md)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(SilaSpacing.lg))
 
-            // ===== قسم: الملف الشخصي (Profile) =====
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Box(contentAlignment = Alignment.BottomEnd) {
-                    SilaAvatar(
-                        name = displayName,
-                        photoUrl = photoUrl,
-                        seed = uid,
-                        size = 110.dp,
-                        isLoading = isUploadingPhoto
-                    )
+            // ===== قسم: الملف الشخصي (Profile) — معاينة حية تعكس الحقول تحت =====
+            SilaProfileHeader(
+                displayName = displayName,
+                username = username,
+                photoUrl = photoUrl,
+                bio = bio,
+                avatarSize = 110.dp,
+                isAvatarLoading = isUploadingPhoto,
+                avatarOverlay = {
                     IconButton(
                         onClick = { photoPicker.launch("image/*") },
                         modifier = Modifier
@@ -194,19 +196,19 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                         )
                     }
                 }
-            }
+            )
 
             if (uploadError != null) {
                 Text(
                     uploadError!!,
                     color = MaterialTheme.colorScheme.error,
                     fontSize = 12.sp,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = SilaSpacing.xs),
                     textAlign = TextAlign.Center
                 )
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(SilaSpacing.xl))
 
             // ===== قسم: المعلومات الشخصية (Personal Information) =====
             SilaSectionCard(title = "المعلومات الشخصية") {
@@ -226,7 +228,7 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                 SilaSettingTextField(label = "البلد", value = country, onValueChange = { country = it })
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(SilaSpacing.md))
 
             // ===== قسم: الخصوصية (Privacy) =====
             SilaSectionCard(title = "الخصوصية") {
@@ -244,7 +246,7 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(SilaSpacing.md))
 
             // ===== قسم: الحساب (Account) =====
             SilaSectionCard(title = "الحساب") {
@@ -252,26 +254,28 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                     "الحالة",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 14.dp)
+                    modifier = Modifier.padding(top = SilaSpacing.sm)
                 )
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(vertical = SilaSpacing.xs),
+                    horizontalArrangement = Arrangement.spacedBy(SilaSpacing.xs)
                 ) {
-                    listOf("online" to "متصل", "away" to "بعيد", "invisible" to "غير ظاهر").forEach { (value, label) ->
-                        FilterChip(
+                    listOf(
+                        Triple("online", "متصل", SilaStatusDots.Online),
+                        Triple("away", "بعيد", SilaStatusDots.Away),
+                        Triple("invisible", "غير ظاهر", null)
+                    ).forEach { (value, label, dot) ->
+                        SilaStatusChip(
+                            label = label,
                             selected = status == value,
                             onClick = { status = value },
-                            label = { Text(label) },
-                            leadingIcon = if (value == "online" && status == value) {
-                                { Box(modifier = Modifier.size(8.dp).background(Color(0xFF34C759), CircleShape)) }
-                            } else null
+                            dotColor = dot
                         )
                     }
                 }
                 Divider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = SilaSpacing.sm),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -281,7 +285,7 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(SilaSpacing.xs))
                     Text(
                         "الحساب مرتبط بتسجيل دخول Google",
                         fontSize = 13.sp,
@@ -291,7 +295,41 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(SilaSpacing.md))
+
+            // ===== قسم: منطقة الخطر (Danger Zone) =====
+            // ملاحظة: هذا زر واجهة غير مفعّل حالياً (لا ينفّذ signOut ولا أي إجراء)
+            // لعدم توفر ربط تسجيل الخروج بهذه الشاشة بعد. يظهر معطّلاً بوضوح
+            // مع "قريباً" حتى لا يبدو أنه يعمل ولا يعمل فعلياً.
+            SilaSectionCard(title = "منطقة الخطر") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = SilaSpacing.sm),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.Logout,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(SilaSpacing.xs))
+                        Text(
+                            "تسجيل الخروج",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                        )
+                    }
+                    Text(
+                        "قريباً",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(SilaSpacing.xl))
 
             SilaPrimaryButton(
                 text = if (isSaving) "جارِ الحفظ..." else "حفظ التغييرات",
@@ -299,7 +337,7 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                 loading = isSaving
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(SilaSpacing.xxl))
         }
     }
 }
