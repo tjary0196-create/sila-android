@@ -1,5 +1,8 @@
 package com.sila.messaging.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -8,30 +11,34 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.Animatable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sila.messaging.ui.theme.SilaSpacing
 
 /**
- * A single chat message bubble, Telegram-style: large rounded corners on
- * three sides, with the bubble's own outer corner (bottom-end for a sent
- * bubble, bottom-start for a received one) flattened only on the *last*
- * bubble of a consecutive run from the same sender — this is what visually
- * groups a burst of messages together instead of showing disconnected pills.
- *
- * The timestamp sits inside the bubble, aligned under the text on the same
- * trailing edge — the common layout used by most chat apps for short,
- * single-line messages.
+ * A single chat message bubble, Telegram-style. Sent bubbles carry a subtle
+ * brand gradient instead of a flat fill, and every new bubble "pops" in with
+ * a spring (scale + fade, anchored to its own trailing/leading corner) —
+ * giving the conversation the same lively, springy feel as the rest of Sila
+ * instead of messages simply appearing.
  *
  * @param isLastInGroup whether this is the last message in a run from the
- *   same sender — controls the flattened "tail" corner. Callers building a
- *   conversation list should pass `true` for isolated messages and only
- *   `false` for a bubble immediately followed by another one from the same
- *   sender.
+ *   same sender — controls the flattened "tail" corner.
+ * @param animateIn whether to play the pop-in entrance (defaults to true;
+ *   set false when re-rendering already-seen history to avoid replaying it).
  */
 @Composable
 fun SilaMessageBubble(
@@ -39,7 +46,8 @@ fun SilaMessageBubble(
     time: String,
     isMe: Boolean,
     modifier: Modifier = Modifier,
-    isLastInGroup: Boolean = true
+    isLastInGroup: Boolean = true,
+    animateIn: Boolean = true
 ) {
     val bigCorner = 18.dp
     val tailCorner = 4.dp
@@ -51,13 +59,35 @@ fun SilaMessageBubble(
         bottomEnd = if (isMe && isLastInGroup) tailCorner else bigCorner
     )
 
-    val bubbleColor = if (isMe) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
+    val progress = remember { Animatable(if (animateIn) 0.6f else 1f) }
+    LaunchedEffect(Unit) {
+        if (animateIn) {
+            progress.animateTo(
+                1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
+            )
+        }
     }
+
+    val backgroundModifier = if (isMe) {
+        Modifier.background(
+            brush = Brush.linearGradient(
+                listOf(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.85f)
+                )
+            ),
+            shape = shape
+        )
+    } else {
+        Modifier.background(color = MaterialTheme.colorScheme.surfaceVariant, shape = shape)
+    }
+
     val textColor = if (isMe) {
-        MaterialTheme.colorScheme.onPrimaryContainer
+        androidx.compose.ui.graphics.Color.White
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -65,14 +95,20 @@ fun SilaMessageBubble(
     Column(
         modifier = modifier
             .widthIn(max = 280.dp)
-            .background(color = bubbleColor, shape = shape)
+            .graphicsLayer {
+                scaleX = progress.value
+                scaleY = progress.value
+                alpha = ((progress.value - 0.6f) / 0.4f).coerceIn(0f, 1f)
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(if (isMe) 1f else 0f, 1f)
+            }
+            .then(backgroundModifier)
             .padding(horizontal = SilaSpacing.sm, vertical = SilaSpacing.xs),
         horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
     ) {
         Text(text = text, color = textColor, fontSize = 15.sp)
         Text(
             text = time,
-            color = textColor.copy(alpha = 0.6f),
+            color = textColor.copy(alpha = 0.7f),
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(top = 2.dp)
