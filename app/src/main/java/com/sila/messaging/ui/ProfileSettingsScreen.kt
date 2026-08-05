@@ -183,6 +183,32 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                 }
             )
 
+            Spacer(modifier = Modifier.height(SilaSpacing.xs))
+
+            // مؤشر الحالة الحيّة تحت الاسم، بنفس روح الصورة المرجعية (نقطة + نص)،
+            // مربوط بالحالة الفعلية المختارة تحت (Account) لا رقم ثابت.
+            val (statusDotColor, statusLabel) = when (status) {
+                "online" -> SilaStatusDots.Online to "متصل الآن"
+                "away" -> SilaStatusDots.Away to "بعيد"
+                else -> null to "غير ظاهر"
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (statusDotColor != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(statusDotColor, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(SilaSpacing.xxs))
+                }
+                Text(
+                    statusLabel,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (statusDotColor != null) statusDotColor else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             if (uiState.error != null) {
                 Text(
                     uiState.error!!,
