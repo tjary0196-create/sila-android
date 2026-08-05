@@ -24,10 +24,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
-import com.sila.messaging.BuildConfig
 import com.sila.messaging.data.LocationUtils
-import com.sila.messaging.data.UserRepository
+import com.sila.messaging.ui.screens.profile.ProfileViewModel
 import com.sila.messaging.ui.components.SilaLoading
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sila.messaging.data.user.FirestoreUserRepository
 import com.sila.messaging.ui.components.SilaPrimaryButton
 import com.sila.messaging.ui.components.SilaProfileHeader
 import com.sila.messaging.ui.components.SilaSectionCard
@@ -47,8 +48,15 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val uid = auth.currentUser?.uid ?: return
-    val repo = remember { UserRepository() }
-    val scope = rememberCoroutineScope()
+    
+    val viewModel: ProfileViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return ProfileViewModel(FirestoreUserRepository(), uid) as T
+        }
+    })
+
+    val uiState by viewModel.ui.collectAsState()
+    val profile = uiState.profile
 
     var photoUrl by remember { mutableStateOf<String?>(null) }
     var displayName by remember { mutableStateOf("") }
@@ -63,46 +71,27 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
     var showCountry by remember { mutableStateOf(true) }
     var showLastSeen by remember { mutableStateOf(true) }
 
-    var isSaving by remember { mutableStateOf(false) }
-    var isUploadingPhoto by remember { mutableStateOf(false) }
-    var uploadError by remember { mutableStateOf<String?>(null) }
-    var isLoadingProfile by remember { mutableStateOf(true) }
-
-    LaunchedEffect(uid) {
-        isLoadingProfile = true
-        val profile = repo.getUserProfile(uid)
+    LaunchedEffect(profile) {
         if (profile != null) {
             photoUrl = profile.photoUrl
-            displayName = profile.displayName ?: ""
+            displayName = profile.displayName
             username = profile.username
             bio = profile.bio ?: ""
             birthDate = profile.birthDate ?: ""
-            country = profile.country?.takeIf { it.isNotBlank() } ?: LocationUtils.detectCountry(context)
+            country = profile.country ?: LocationUtils.detectCountry(context)
             status = profile.status
-            showBio = profile.showBio
-            showBirthDate = profile.showBirthDate
-            showCountry = profile.showCountry
-            showLastSeen = profile.showLastSeen
-        } else {
-            country = LocationUtils.detectCountry(context)
+            showBio = profile.privacy.showBio
+            showBirthDate = profile.privacy.showBirthDate
+            showCountry = profile.privacy.showCountry
+            showLastSeen = profile.privacy.showLastSeen
         }
-        isLoadingProfile = false
     }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
-            isUploadingPhoto = true
-            uploadError = null
-            scope.launch {
-                try {
-                    val url = repo.uploadProfilePhoto(context, uri, BuildConfig.IMGBB_API_KEY)
-                    photoUrl = url
-                    repo.updateProfile(uid, mapOf("photoUrl" to url))
-                } catch (e: Exception) {
-                    uploadError = "فشل رفع الصورة، حاول مرة تانية"
-                } finally {
-                    isUploadingPhoto = false
-                }
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes != null) {
+                viewModel.uploadPhoto(bytes)
             }
         }
     }
@@ -115,22 +104,18 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
     }
 
     fun saveProfile() {
-        isSaving = true
-        scope.launch {
-            repo.updateProfile(uid, mapOf(
-                "displayName" to displayName,
-                "bio" to bio,
-                "birthDate" to birthDate,
-                "country" to country,
-                "status" to status,
-                "showBio" to showBio,
-                "showBirthDate" to showBirthDate,
-                "showCountry" to showCountry,
-                "showLastSeen" to showLastSeen
-            ))
-            isSaving = false
-            onBack()
-        }
+        viewModel.updateProfile(mapOf(
+            "displayName" to displayName,
+            "bio" to bio,
+            "birthDate" to birthDate,
+            "country" to country,
+            "status" to status,
+            "showBio" to showBio,
+            "showBirthDate" to showBirthDate,
+            "showCountry" to showCountry,
+            "showLastSeen" to showLastSeen
+        ))
+        onBack()
     }
 
     Scaffold(
@@ -143,8 +128,8 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                     }
                 },
                 actions = {
-                    TextButton(onClick = { saveProfile() }, enabled = !isSaving) {
-                        if (isSaving) {
+                    TextButton(onClick = { saveProfile() }, enabled = !uiState.isSaving) {
+                        if (uiState.isSaving) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
@@ -159,7 +144,7 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        if (isLoadingProfile) {
+        if (uiState.isLoading) {
             SilaLoading(modifier = Modifier.fillMaxSize().padding(padding))
             return@Scaffold
         }
@@ -180,7 +165,7 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                 photoUrl = photoUrl,
                 bio = bio,
                 avatarSize = 110.dp,
-                isAvatarLoading = isUploadingPhoto,
+                isAvatarLoading = uiState.isSaving,
                 avatarOverlay = {
                     IconButton(
                         onClick = { photoPicker.launch("image/*") },
@@ -198,9 +183,9 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
                 }
             )
 
-            if (uploadError != null) {
+            if (uiState.error != null) {
                 Text(
-                    uploadError!!,
+                    uiState.error!!,
                     color = MaterialTheme.colorScheme.error,
                     fontSize = 12.sp,
                     modifier = Modifier.fillMaxWidth().padding(top = SilaSpacing.xs),
@@ -332,9 +317,9 @@ fun ProfileSettingsScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(SilaSpacing.xl))
 
             SilaPrimaryButton(
-                text = if (isSaving) "جارِ الحفظ..." else "حفظ التغييرات",
+                text = if (uiState.isSaving) "جارِ الحفظ..." else "حفظ التغييرات",
                 onClick = { saveProfile() },
-                loading = isSaving
+                loading = uiState.isSaving
             )
 
             Spacer(modifier = Modifier.height(SilaSpacing.xxl))

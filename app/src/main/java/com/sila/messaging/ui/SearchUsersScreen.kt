@@ -21,8 +21,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
-import com.sila.messaging.data.UserRepository
+import com.sila.messaging.ui.screens.search.SearchUsersViewModel
 import com.sila.messaging.ui.components.SilaAvatar
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sila.messaging.data.user.FirestoreUserRepository
 import com.sila.messaging.ui.components.SilaEmptyState
 import com.sila.messaging.ui.components.SilaErrorState
 import com.sila.messaging.ui.components.SilaSearchBar
@@ -38,37 +40,15 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchUsersScreen(onStartChat: (String) -> Unit, onBack: () -> Unit) {
-    var query by remember { mutableStateOf("") }
-    val results = remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
-    val repo = remember { UserRepository() }
+    val viewModel: SearchUsersViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return SearchUsersViewModel(FirestoreUserRepository()) as T
+        }
+    })
+
+    val uiState by viewModel.ui.collectAsState()
     val myUid = FirebaseAuth.getInstance().currentUser?.uid
-
-    var isSearching by remember { mutableStateOf(false) }
-    var searchError by remember { mutableStateOf<String?>(null) }
-    var hasSearchedOnce by remember { mutableStateOf(false) }
-    var retryTrigger by remember { mutableStateOf(0) }
-
-    LaunchedEffect(query, retryTrigger) {
-        val trimmed = query.trim()
-        if (trimmed.isEmpty()) {
-            results.value = emptyList()
-            isSearching = false
-            searchError = null
-            return@LaunchedEffect
-        }
-        delay(300) // debounce so we don't hit Firestore on every keystroke
-        isSearching = true
-        searchError = null
-        try {
-            val found = repo.searchByPrefix(trimmed)
-            results.value = found.filter { (_, uid) -> uid != myUid }
-        } catch (e: Exception) {
-            searchError = e.localizedMessage ?: "تعذر إتمام البحث"
-        } finally {
-            isSearching = false
-            hasSearchedOnce = true
-        }
-    }
+    val results = uiState.results.filter { it.second != myUid }
 
     Scaffold(
         topBar = {
@@ -92,8 +72,8 @@ fun SearchUsersScreen(onStartChat: (String) -> Unit, onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(SilaSpacing.xs))
 
             SilaSearchBar(
-                value = query,
-                onValueChange = { query = it },
+                value = uiState.query,
+                onValueChange = { viewModel.onQueryChange(it) },
                 placeholder = "ابحث بالـ username"
             )
 
@@ -101,18 +81,18 @@ fun SearchUsersScreen(onStartChat: (String) -> Unit, onBack: () -> Unit) {
 
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
-                    query.isBlank() -> SilaEmptyState(
+                    uiState.query.isBlank() -> SilaEmptyState(
                         icon = Icons.Filled.PersonSearch,
                         title = "ابحث عن أصدقائك",
                         subtitle = "اكتب اسم المستخدم (@username) للبدء بمحادثة جديدة"
                     )
 
-                    searchError != null -> SilaErrorState(
-                        message = searchError!!,
-                        onRetry = { retryTrigger++ }
+                    uiState.error != null -> SilaErrorState(
+                        message = uiState.error!!,
+                        onRetry = { viewModel.onQueryChange(uiState.query) }
                     )
 
-                    isSearching -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    uiState.isLoading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                         CircularProgressIndicator(
                             modifier = Modifier.padding(top = SilaSpacing.xxl).size(28.dp),
                             strokeWidth = 3.dp,
@@ -120,16 +100,16 @@ fun SearchUsersScreen(onStartChat: (String) -> Unit, onBack: () -> Unit) {
                         )
                     }
 
-                    hasSearchedOnce && results.value.isEmpty() -> SilaEmptyState(
+                    results.isEmpty() && uiState.query.isNotBlank() -> SilaEmptyState(
                         icon = Icons.Filled.SearchOff,
                         title = "لا يوجد نتائج",
-                        subtitle = "ما لقينا حد باسم \"$query\"، جرب اسم مستخدم مختلف"
+                        subtitle = "ما لقينا حد باسم \"${uiState.query}\"، جرب اسم مستخدم مختلف"
                     )
 
                     else -> LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(SilaSpacing.xs)
                     ) {
-                        items(results.value, key = { it.second }) { (uname, uid) ->
+                        items(results, key = { it.second }) { (uname, uid) ->
                             SearchResultCard(
                                 username = uname,
                                 onClick = { onStartChat(uid) }

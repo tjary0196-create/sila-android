@@ -19,3 +19,8 @@ app/google-services.json
 *.ear
 
 .DS_Store
+
+# Cloud Functions (added for the imgbb upload proxy — see functions/)
+functions/node_modules/
+functions/lib/
+functions/*.log

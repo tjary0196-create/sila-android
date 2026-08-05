@@ -13,7 +13,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.sila.messaging.data.AuthViewModel
+import com.sila.messaging.ui.screens.auth.AuthViewModel
+import com.sila.messaging.data.auth.FirebaseAuthRepository
 import com.sila.messaging.ui.AppNavHost
 import com.sila.messaging.ui.theme.SilaTheme
 
@@ -48,11 +49,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             SilaTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    val vm: AuthViewModel = viewModel()
+                    // In a real app, use Hilt or a Factory. For now, manual injection.
+                    val authRepo = FirebaseAuthRepository()
+                    val vm: AuthViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                            return AuthViewModel(authRepo) as T
+                        }
+                    })
                     authViewModel = vm
 
                     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                        .requestIdToken(vm.getWebClientId())
+                        .requestIdToken(BuildConfig.WEB_CLIENT_ID)
                         .requestEmail()
                         .build()
                     val googleSignInClient = GoogleSignIn.getClient(this, gso)

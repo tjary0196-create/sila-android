@@ -15,12 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
-import com.sila.messaging.data.ChatRepository
-import com.sila.messaging.data.Message
-import com.sila.messaging.data.UserRepository
+import com.sila.messaging.ui.screens.chat.ChatViewModel
 import com.sila.messaging.ui.components.SilaAvatar
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sila.messaging.data.chat.FirestoreChatRepository
+import com.sila.messaging.data.user.FirestoreUserRepository
 import com.sila.messaging.ui.components.SilaDateSeparator
 import com.sila.messaging.ui.components.SilaMessageBubble
 import com.sila.messaging.ui.components.SilaTopBar
@@ -37,30 +37,26 @@ import java.util.Locale
 fun ChatScreen(otherUid: String, onBack: () -> Unit) {
     val auth = FirebaseAuth.getInstance()
     val me = auth.currentUser?.uid ?: return
-    val repo = remember { ChatRepository() }
-    val userRepo = remember { UserRepository() }
-    val messages = remember { mutableStateOf<List<Message>>(emptyList()) }
-    val scope = rememberCoroutineScope()
-    var otherName by remember { mutableStateOf(otherUid.take(6)) }
-    var otherPhotoUrl by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(otherUid) {
-        val profile = userRepo.getPublicProfile(otherUid)
-        if (profile != null) {
-            otherName = profile.username
-            otherPhotoUrl = profile.photoUrl
+    
+    val viewModel: ChatViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return ChatViewModel(FirestoreChatRepository(), FirestoreUserRepository(), me, otherUid) as T
         }
-        val chatId = repo.getOrCreateChat(me, otherUid)
-        repo.messagesListener(chatId).collectLatest { list -> messages.value = list }
-    }
+    })
+
+    val uiState by viewModel.ui.collectAsState()
+    val messages = uiState.messages
+    val otherUser = uiState.otherUser
+    val otherName = otherUser?.displayName ?: otherUser?.username ?: otherUid.take(6)
+    val otherPhotoUrl = otherUser?.photoUrl
 
     var text by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
     // Auto-scroll to the newest message as the conversation grows.
-    LaunchedEffect(messages.value.size) {
-        if (messages.value.isNotEmpty()) {
-            listState.animateScrollToItem(messages.value.lastIndex)
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.lastIndex)
         }
     }
 
@@ -117,15 +113,11 @@ fun ChatScreen(otherUid: String, onBack: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(SilaSpacing.xs))
                 IconButton(
-                    onClick = {
-                        if (text.isBlank()) return@IconButton
-                        val toSend = text
-                        text = ""
-                        scope.launch {
-                            val chatId = repo.getOrCreateChat(me, otherUid)
-                            repo.sendMessage(chatId, me, toSend)
-                        }
-                    },
+                        onClick = {
+                            if (text.isBlank()) return@IconButton
+                            viewModel.sendMessage(text)
+                            text = ""
+                        },
                     modifier = Modifier
                         .size(48.dp)
                         .background(sendButtonColor, shape = RoundedCornerShape(24.dp))
@@ -136,7 +128,7 @@ fun ChatScreen(otherUid: String, onBack: () -> Unit) {
         }
     ) { padding ->
         val timeFormatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
-        val list = messages.value
+        val list = messages
 
         LazyColumn(
             state = listState,
@@ -147,17 +139,17 @@ fun ChatScreen(otherUid: String, onBack: () -> Unit) {
                 val prev = list.getOrNull(index - 1)
                 val next = list.getOrNull(index + 1)
 
-                val isNewDay = isDifferentDay(prev?.createdAt, msg.createdAt)
+                val isNewDay = isDifferentDay(prev?.createdAtMillis, msg.createdAtMillis)
                 val isLastInGroup = next == null ||
                     next.senderId != msg.senderId ||
-                    isDifferentDay(msg.createdAt, next.createdAt)
+                    isDifferentDay(msg.createdAtMillis, next.createdAtMillis)
                 val isFirstInGroup = prev == null ||
                     prev.senderId != msg.senderId ||
                     isNewDay
 
                 if (isNewDay) {
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = SilaSpacing.sm), horizontalArrangement = Arrangement.Center) {
-                        SilaDateSeparator(label = formatDayLabel(msg.createdAt?.toDate()))
+                        SilaDateSeparator(label = formatDayLabel(msg.createdAtMillis?.let { Date(it) }))
                     }
                 }
 
@@ -169,7 +161,7 @@ fun ChatScreen(otherUid: String, onBack: () -> Unit) {
                 ) {
                     SilaMessageBubble(
                         text = msg.text,
-                        time = msg.createdAt?.toDate()?.let { timeFormatter.format(it) } ?: "",
+                        time = msg.createdAtMillis?.let { timeFormatter.format(Date(it)) } ?: "",
                         isMe = isMe,
                         isLastInGroup = isLastInGroup
                     )
@@ -179,10 +171,10 @@ fun ChatScreen(otherUid: String, onBack: () -> Unit) {
     }
 }
 
-private fun isDifferentDay(a: Timestamp?, b: Timestamp?): Boolean {
+private fun isDifferentDay(a: Long?, b: Long?): Boolean {
     if (a == null || b == null) return true
-    val calA = Calendar.getInstance().apply { time = a.toDate() }
-    val calB = Calendar.getInstance().apply { time = b.toDate() }
+    val calA = Calendar.getInstance().apply { time = Date(a) }
+    val calB = Calendar.getInstance().apply { time = Date(b) }
     return calA.get(Calendar.YEAR) != calB.get(Calendar.YEAR) ||
         calA.get(Calendar.DAY_OF_YEAR) != calB.get(Calendar.DAY_OF_YEAR)
 }

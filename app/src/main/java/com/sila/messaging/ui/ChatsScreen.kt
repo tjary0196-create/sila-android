@@ -20,11 +20,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
-import com.sila.messaging.data.Chat
-import com.sila.messaging.data.ChatRepository
-import com.sila.messaging.data.UserProfile
-import com.sila.messaging.data.UserRepository
+import com.sila.messaging.ui.screens.chats.ChatsViewModel
+import com.sila.messaging.ui.screens.chats.ChatUiState
 import com.sila.messaging.ui.components.SilaAvatar
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sila.messaging.data.chat.FirestoreChatRepository
+import com.sila.messaging.data.user.FirestoreUserRepository
 import com.sila.messaging.ui.components.SilaChatRow
 import com.sila.messaging.ui.components.SilaEmptyState
 import com.sila.messaging.ui.components.SilaErrorState
@@ -38,89 +39,29 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-private data class ChatUiState(
-    val chat: Chat,
-    val otherUid: String,
-    val displayName: String,
-    val username: String,
-    val photoUrl: String?,
-    val isOnline: Boolean
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfileClick: () -> Unit) {
-    val repo = remember { ChatRepository() }
-    val userRepo = remember { UserRepository() }
     val auth = FirebaseAuth.getInstance()
     val uid = auth.currentUser?.uid ?: return
 
-    val rawChats = remember { mutableStateOf<List<Chat>>(emptyList()) }
-    val profileCache = remember { mutableStateMapOf<String, UserProfile>() }
-    var myPhotoUrl by remember { mutableStateOf<String?>(null) }
-    var myDisplayName by remember { mutableStateOf("") }
+    val viewModel: ChatsViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return ChatsViewModel(FirestoreChatRepository(), FirestoreUserRepository(), uid) as T
+        }
+    })
 
+    val uiState by viewModel.ui.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(0) }
     var screenVisible by remember { mutableStateOf(false) }
 
-    // حالتا التحميل والخطأ (UI فقط) — لا تغيّران مصدر البيانات، فقط تعكسان حالته
-    var isLoadingChats by remember { mutableStateOf(true) }
-    var loadError by remember { mutableStateOf<String?>(null) }
-    var reloadTrigger by remember { mutableStateOf(0) }
-
     LaunchedEffect(Unit) { screenVisible = true }
 
-    LaunchedEffect(uid, reloadTrigger) {
-        isLoadingChats = true
-        loadError = null
-        repo.chatsForUserListener(uid)
-            .catch { e ->
-                loadError = e.localizedMessage ?: "تعذر تحميل المحادثات"
-                isLoadingChats = false
-            }
-            .collectLatest { list ->
-                rawChats.value = list
-                isLoadingChats = false
-            }
-    }
-
-    LaunchedEffect(uid) {
-        val profile = userRepo.getUserProfile(uid)
-        myPhotoUrl = profile?.photoUrl
-        myDisplayName = profile?.displayName ?: ""
-    }
-
-    // نجيب بروفايل كل طرف تاني بمحادثة (اسم، يوزرنيم، صورة، وحالة الاتصال الحقيقية)
-    LaunchedEffect(rawChats.value) {
-        rawChats.value.forEach { chat ->
-            val otherUid = chat.participants.firstOrNull { it != uid } ?: return@forEach
-            if (!profileCache.containsKey(otherUid)) {
-                val profile = userRepo.getPublicProfile(otherUid)
-                if (profile != null) profileCache[otherUid] = profile
-            }
-        }
-    }
-
-    val chatUiList = rawChats.value.mapNotNull { chat ->
-        val otherUid = chat.participants.firstOrNull { it != uid } ?: return@mapNotNull null
-        val profile = profileCache[otherUid]
-        val name = profile?.displayName?.takeIf { it.isNotBlank() } ?: profile?.username ?: otherUid.take(6)
-        val isOnline = profile?.status == "online" && profile.showLastSeen
-        ChatUiState(
-            chat = chat,
-            otherUid = otherUid,
-            displayName = name,
-            username = profile?.username ?: "",
-            photoUrl = profile?.photoUrl,
-            isOnline = isOnline
-        )
-    }
-
     val filteredChats = if (searchQuery.isBlank()) {
-        chatUiList
+        uiState.chats
     } else {
-        chatUiList.filter {
+        uiState.chats.filter {
             it.displayName.contains(searchQuery, ignoreCase = true) ||
                 it.username.contains(searchQuery, ignoreCase = true)
         }
@@ -137,13 +78,13 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                     title = "الرسائل",
                     navigationIcon = {
                         Box(modifier = Modifier.padding(start = 12.dp)) {
-                            SilaAvatar(
-                                name = myDisplayName,
-                                photoUrl = myPhotoUrl,
-                                seed = uid,
-                                size = 38.dp,
-                                onClick = onProfileClick
-                            )
+                                SilaAvatar(
+                                    name = uiState.myProfile?.displayName ?: "",
+                                    photoUrl = uiState.myProfile?.photoUrl,
+                                    seed = uid,
+                                    size = 38.dp,
+                                    onClick = onProfileClick
+                                )
                         }
                     },
                     containerColor = Color.Transparent
@@ -194,12 +135,12 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                     modifier = Modifier.fillMaxSize().padding(padding),
                     text = if (selectedTab == 1) "ميزة الرسائل غير المقروءة قريباً" else "ميزة طلبات المراسلة قريباً"
                 )
-                loadError != null -> SilaErrorState(
-                    message = loadError ?: "تعذر تحميل المحادثات",
+                uiState.error != null -> SilaErrorState(
+                    message = uiState.error ?: "تعذر تحميل المحادثات",
                     modifier = Modifier.fillMaxSize().padding(padding),
-                    onRetry = { reloadTrigger++ }
+                    onRetry = { viewModel.retry() }
                 )
-                isLoadingChats -> SilaLoading(
+                uiState.isLoading -> SilaLoading(
                     modifier = Modifier.fillMaxSize().padding(padding)
                 )
                 filteredChats.isEmpty() -> {
@@ -220,13 +161,13 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                 }
                 else -> {
                     LazyColumn(modifier = Modifier.padding(padding)) {
-                        itemsIndexed(filteredChats, key = { _, item -> item.chat.id }) { _, item ->
+                        itemsIndexed(filteredChats, key = { _, item -> item.chatId }) { _, item ->
                             SilaChatRow(
                                 displayName = item.displayName,
                                 username = item.username,
                                 photoUrl = item.photoUrl,
-                                lastMessage = item.chat.lastMessage?.takeIf { it.isNotBlank() } ?: "ابدأ المحادثة",
-                                timeLabel = formatChatTime(item.chat.updatedAt?.toDate()),
+                                lastMessage = item.lastMessage?.takeIf { it.isNotBlank() } ?: "ابدأ المحادثة",
+                                timeLabel = formatChatTime(item.updatedAtMillis?.let { java.util.Date(it) }),
                                 isOnline = item.isOnline,
                                 onClick = { onOpenChat(item.otherUid) }
                             )

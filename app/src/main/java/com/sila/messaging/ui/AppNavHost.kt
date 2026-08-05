@@ -10,15 +10,21 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.sila.messaging.data.AuthViewModel
-import com.sila.messaging.data.UserRepository
+import com.sila.messaging.ui.screens.auth.AuthViewModel
+import com.sila.messaging.data.user.FirestoreUserRepository
+import com.sila.messaging.data.user.FirestoreUsernameRepository
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 /**
  * Sila's shared motion language for screen-to-screen navigation:
@@ -78,7 +84,8 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.fadeThroughExit() 
 @Composable
 fun AppNavHost(onGoogleSignInClicked: () -> Unit, authViewModel: AuthViewModel) {
     val navController = rememberNavController()
-    val authState by authViewModel.uiState.collectAsState()
+    val authUi by authViewModel.ui.collectAsState()
+    val scope = rememberCoroutineScope()
 
     NavHost(navController = navController, startDestination = "login") {
         composable(
@@ -86,14 +93,33 @@ fun AppNavHost(onGoogleSignInClicked: () -> Unit, authViewModel: AuthViewModel) 
             enterTransition = { fadeThrough() },
             exitTransition = { fadeThroughExit() }
         ) {
+            var isCheckingProfile by remember { mutableStateOf(false) }
+
             LoginScreen(
-                isSignedIn = authState.isSignedIn,
+                isSignedIn = authUi.signedIn,
+                isCheckingProfile = isCheckingProfile,
                 onSignInClick = onGoogleSignInClicked,
                 onContinue = {
-                    val destination = if (authState.needsUsername) "username" else "chats"
-                    navController.navigate(destination) { popUpTo("login") { inclusive = true } }
+                    val uid = authUi.uid
+                    if (uid != null) {
+                        // Find out whether this user already has a profile BEFORE deciding
+                        // where to send them — previously every sign-in (including returning
+                        // users) was routed straight to the username-claim screen, which then
+                        // dead-ended with "username taken" for anyone who already had one.
+                        // This also removes the earlier main-thread runBlocking(): the check
+                        // now runs as a real, cancellable coroutine via rememberCoroutineScope.
+                        scope.launch {
+                            isCheckingProfile = true
+                            val result = FirestoreUserRepository().getMyProfile(uid)
+                            isCheckingProfile = false
+                            val hasProfile = result is com.sila.messaging.core.result.AppResult.Success &&
+                                result.data != null
+                            val destination = if (hasProfile) "chats" else "username"
+                            navController.navigate(destination) { popUpTo("login") { inclusive = true } }
+                        }
+                    }
                 },
-                errorMessage = authState.errorMessage
+                errorMessage = authUi.error
             )
         }
 
@@ -108,8 +134,14 @@ fun AppNavHost(onGoogleSignInClicked: () -> Unit, authViewModel: AuthViewModel) 
             val photoUrl = currentUser?.photoUrl?.toString()
 
             UsernameScreen(onClaim = { username ->
-                val repo = UserRepository()
-                try { repo.claimUsername(uid, username, displayName, photoUrl) } catch (e: Exception) { false }
+                // `onClaim` is itself a suspend lambda, invoked from inside a
+                // `scope.launch { }` in UsernameScreen — so we're already off the main
+                // thread here and can call the suspend repository function directly.
+                // The previous `runBlocking { ... }` blocked the UI thread for the
+                // duration of the network call/transaction; this doesn't.
+                val repo = FirestoreUsernameRepository()
+                val result = repo.claimUsername(uid, username, displayName, photoUrl)
+                result is com.sila.messaging.core.result.AppResult.Success
             }, onSuccess = {
                 navController.navigate("chats") { popUpTo("login") { inclusive = true } }
             })

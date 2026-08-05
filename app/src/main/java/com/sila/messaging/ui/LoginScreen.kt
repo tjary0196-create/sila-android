@@ -42,7 +42,8 @@ fun LoginScreen(
     isSignedIn: Boolean,
     onSignInClick: () -> Unit,
     onContinue: () -> Unit,
-    errorMessage: String?
+    errorMessage: String?,
+    isCheckingProfile: Boolean = false
 ) {
     var isLoading by remember { mutableStateOf(false) }
     var visible by remember { mutableStateOf(false) }
@@ -124,8 +125,10 @@ fun LoginScreen(
 
                     if (isSignedIn) {
                         SilaPrimaryButton(
-                            text = "متابعة",
+                            text = if (isCheckingProfile) "جارِ التحقق..." else "متابعة",
                             onClick = onContinue,
+                            enabled = !isCheckingProfile,
+                            loading = isCheckingProfile,
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
@@ -178,7 +181,7 @@ fun LoginScreen(
                         )
                         Spacer(modifier = Modifier.width(SilaSpacing.xxs))
                         Text(
-                            "محادثاتك مشفّرة وخاصة بالكامل",
+                            "بياناتك محمية أثناء النقل ومحادثاتك خاصة بحسابك",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

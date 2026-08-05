@@ -12,7 +12,9 @@ if (localPropsFile.exists()) {
     localProps.load(localPropsFile.inputStream())
 }
 val webClientId: String = localProps.getProperty("FIREBASE_WEB_CLIENT_ID", "")
-val imgbbApiKey: String = localProps.getProperty("IMGBB_API_KEY", "")
+// NOTE: IMGBB_API_KEY is intentionally NOT read here anymore. It now lives only as a
+// Cloud Functions secret (see /functions) and is never embedded in the client binary.
+// See functions/src/index.ts's `uploadProfilePhoto` callable.
 
 val composeVersion = "1.5.0"
 val iconsVersion = "1.6.7"
@@ -31,13 +33,22 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         buildConfigField("String", "WEB_CLIENT_ID", "\"$webClientId\"")
-        buildConfigField("String", "IMGBB_API_KEY", "\"$imgbbApiKey\"")
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Code shrinking/obfuscation enabled for release — this is a real hardening
+            // measure against reverse engineering (class/method names are stripped, dead
+            // code is removed). Paired with proguard-rules.pro's Firebase/Coil keep rules
+            // so reflection-based SDK internals still work post-shrink.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        debug {
+            // Debug builds talk to Firebase App Check's debug provider (see SilaApp.kt),
+            // which requires no extra config here — App Check handles the environment
+            // switch automatically based on build type via the SDK we initialize.
         }
     }
 
@@ -73,10 +84,19 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:$firebaseBom"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-functions-ktx") // calls the uploadProfilePhoto Cloud Function
+
+    // App Check — attests that Firestore/Functions calls are coming from this app's real,
+    // unmodified binary running on a genuine device, not a script, emulator farm, or a
+    // patched/rebuilt APK replaying captured requests. This is a meaningful anti-abuse
+    // layer independent of Firestore Rules (Rules check WHO you are; App Check checks
+    // WHAT is calling).
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    debugImplementation("com.google.firebase:firebase-appcheck-debug")
 
     implementation("com.google.android.gms:play-services-auth:21.4.0")
-    implementation("com.google.code.gson:gson:2.10.1")
 
     implementation("io.coil-kt:coil-compose:2.5.0")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // okhttp3 / gson removed: no longer used now that image upload goes through the
+    // uploadProfilePhoto Cloud Function instead of a direct client->imgbb HTTP call.
 }
