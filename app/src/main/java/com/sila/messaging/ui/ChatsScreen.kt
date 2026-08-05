@@ -7,16 +7,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
@@ -31,6 +34,8 @@ import com.sila.messaging.ui.components.SilaEmptyState
 import com.sila.messaging.ui.components.SilaErrorState
 import com.sila.messaging.ui.components.SilaLoading
 import com.sila.messaging.ui.components.SilaSearchBar
+import com.sila.messaging.ui.components.SilaStoriesRow
+import com.sila.messaging.ui.components.SilaStoryContact
 import com.sila.messaging.ui.components.SilaTopBar
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
@@ -67,6 +72,10 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
         }
     }
 
+    val storyContacts = uiState.chats.take(10).map {
+        SilaStoryContact(uid = it.otherUid, name = it.displayName, photoUrl = it.photoUrl, isOnline = it.isOnline)
+    }
+
     Scaffold(
         topBar = {
             Column(
@@ -75,17 +84,36 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                     .background(MaterialTheme.colorScheme.background)
             ) {
                 SilaTopBar(
-                    title = "الرسائل",
+                    title = "المحادثات",
                     navigationIcon = {
                         Box(modifier = Modifier.padding(start = 12.dp)) {
-                                SilaAvatar(
-                                    name = uiState.myProfile?.displayName ?: "",
-                                    photoUrl = uiState.myProfile?.photoUrl,
-                                    seed = uid,
-                                    size = 38.dp,
-                                    onClick = onProfileClick
-                                )
+                            SilaAvatar(
+                                name = uiState.myProfile?.displayName ?: "",
+                                photoUrl = uiState.myProfile?.photoUrl,
+                                seed = uid,
+                                size = 38.dp,
+                                onClick = onProfileClick
+                            )
                         }
+                    },
+                    actions = {
+                        IconButton(onClick = onSearchClick) {
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(RoundedCornerShape(11.dp))
+                                    .background(MaterialTheme.colorScheme.primary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Filled.Edit,
+                                    contentDescription = "محادثة جديدة",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                     },
                     containerColor = Color.Transparent
                 )
@@ -93,36 +121,58 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                 SilaSearchBar(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = "بحث بالمحادثات...",
+                    placeholder = "بحث...",
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)
                 )
 
-                // تبويبات All / Unread / Requests
+                if (searchQuery.isBlank() && storyContacts.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    SilaStoriesRow(
+                        myName = uiState.myProfile?.displayName ?: "",
+                        myPhotoUrl = uiState.myProfile?.photoUrl,
+                        myUid = uid,
+                        contacts = storyContacts,
+                        onMyClick = onProfileClick,
+                        onContactClick = { otherUid -> onOpenChat(otherUid) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+
+                // تبويبات: الكل / غير مقروءة / مجموعات / الطلبات
                 TabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary,
+                    indicator = { positions ->
+                        if (selectedTab < positions.size) {
+                            Box(
+                                modifier = Modifier
+                                    .tabIndicatorOffset(positions[selectedTab])
+                                    .padding(horizontal = 22.dp)
+                                    .height(3.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                        }
+                    },
                     divider = {}
                 ) {
-                    listOf("الكل", "غير مقروءة", "الطلبات").forEachIndexed { index, label ->
+                    listOf("الكل", "غير مقروءة", "مجموعات", "الطلبات").forEachIndexed { index, label ->
                         Tab(
                             selected = selectedTab == index,
                             onClick = { selectedTab = index },
-                            text = { Text(label, fontSize = 13.sp) }
+                            text = {
+                                Text(
+                                    label,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            }
                         )
                     }
                 }
-                Divider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
-            }
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onSearchClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
-            ) {
-                Icon(Icons.Filled.Edit, contentDescription = "محادثة جديدة", tint = MaterialTheme.colorScheme.onPrimary)
+                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), thickness = 0.5.dp)
             }
         }
     ) { padding ->
@@ -131,9 +181,13 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
             enter = fadeIn(animationSpec = tween(300))
         ) {
             when {
-                selectedTab == 1 || selectedTab == 2 -> ComingSoonPlaceholder(
+                selectedTab == 1 || selectedTab == 2 || selectedTab == 3 -> ComingSoonPlaceholder(
                     modifier = Modifier.fillMaxSize().padding(padding),
-                    text = if (selectedTab == 1) "ميزة الرسائل غير المقروءة قريباً" else "ميزة طلبات المراسلة قريباً"
+                    text = when (selectedTab) {
+                        1 -> "ميزة الرسائل غير المقروءة قريباً"
+                        2 -> "ميزة المجموعات قريباً"
+                        else -> "ميزة طلبات المراسلة قريباً"
+                    }
                 )
                 uiState.error != null -> SilaErrorState(
                     message = uiState.error ?: "تعذر تحميل المحادثات",
@@ -160,7 +214,10 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                     }
                 }
                 else -> {
-                    LazyColumn(modifier = Modifier.padding(padding)) {
+                    LazyColumn(
+                        modifier = Modifier.padding(padding),
+                        contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)
+                    ) {
                         itemsIndexed(filteredChats, key = { _, item -> item.chatId }) { _, item ->
                             SilaChatRow(
                                 displayName = item.displayName,
@@ -169,12 +226,8 @@ fun ChatsScreen(onOpenChat: (String) -> Unit, onSearchClick: () -> Unit, onProfi
                                 lastMessage = item.lastMessage?.takeIf { it.isNotBlank() } ?: "ابدأ المحادثة",
                                 timeLabel = formatChatTime(item.updatedAtMillis?.let { java.util.Date(it) }),
                                 isOnline = item.isOnline,
-                                onClick = { onOpenChat(item.otherUid) }
-                            )
-                            Divider(
-                                color = MaterialTheme.colorScheme.outline,
-                                thickness = 0.5.dp,
-                                modifier = Modifier.padding(start = 84.dp)
+                                onClick = { onOpenChat(item.otherUid) },
+                                modifier = Modifier.padding(horizontal = 8.dp)
                             )
                         }
                     }
