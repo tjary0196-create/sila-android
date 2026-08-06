@@ -24,3 +24,5 @@ app/google-services.json
 functions/node_modules/
 functions/lib/
 functions/*.log
+# The Gradle wrapper jar MUST be committed — without it, ./gradlew fails
+!gradle/wrapper/gradle-wrapper.jar
