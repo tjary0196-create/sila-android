@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -34,6 +36,7 @@ import com.sila.ui.theme.*
 @Composable
 fun ChatScreen(
     user: User,
+    messages: List<Message>,
     onBackClick: () -> Unit,
     onCallClick: () -> Unit,
     onMoreClick: () -> Unit,
@@ -42,14 +45,6 @@ fun ChatScreen(
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
-    val messages = listOf(
-        Message("1", "Hey! how are you?", "10:30 AM", isFromMe = false),
-        Message("2", "I'm good, thanks! And you?", "10:31 AM", isFromMe = true, isRead = true),
-        Message("3", "I'm good too 😊", "10:31 AM", isFromMe = false),
-        Message("4", "", "10:32 AM", isFromMe = false, isVoice = true, voiceDuration = "0:12"),
-        Message("5", "Nice voice! 😂", "10:33 AM", isFromMe = true, isRead = true),
-        Message("6", "Thanks 🔥", "10:34 AM", isFromMe = false)
-    )
 
     Scaffold(
         topBar = {
@@ -180,30 +175,58 @@ fun ChatScreen(
                         .weight(1f)
                         .clip(RoundedCornerShape(22.dp))
                         .background(BackgroundPrimary)
-                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    Text(
-                        text = "Type a message...",
-                        fontSize = 14.sp,
-                        color = TextMuted
+                    BasicTextField(
+                        value = messageText,
+                        onValueChange = { messageText = it },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = TextPrimary, fontSize = 14.sp),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(AccentBlue),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                        decorationBox = { innerTextField ->
+                            if (messageText.isEmpty()) {
+                                Text(
+                                    text = "Type a message...",
+                                    fontSize = 14.sp,
+                                    color = TextMuted
+                                )
+                            }
+                            innerTextField()
+                        }
                     )
                 }
 
-                IconButton(onClick = { }) {
-                    Icon(
-                        imageVector = Icons.Outlined.EmojiEmotions,
-                        contentDescription = "Emoji",
-                        tint = TextMuted,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-                IconButton(onClick = { }) {
-                    Icon(
-                        imageVector = Icons.Default.Mic,
-                        contentDescription = "Voice",
-                        tint = TextMuted,
-                        modifier = Modifier.size(22.dp)
-                    )
+                if (messageText.isNotBlank()) {
+                    IconButton(
+                        onClick = {
+                            onSendMessage(messageText.trim())
+                            messageText = ""
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Send",
+                            tint = AccentBlue,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                } else {
+                    IconButton(onClick = { }) {
+                        Icon(
+                            imageVector = Icons.Outlined.EmojiEmotions,
+                            contentDescription = "Emoji",
+                            tint = TextMuted,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    IconButton(onClick = { }) {
+                        Icon(
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "Voice",
+                            tint = TextMuted,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
         }

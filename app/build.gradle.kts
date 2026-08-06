@@ -4,6 +4,13 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val localProperties = java.util.Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     namespace = "com.sila"
     compileSdk = 34
@@ -14,6 +21,13 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        // Read from local.properties locally, or from the FIREBASE_WEB_CLIENT_ID env var in CI
+        // (see .github/workflows/android.yml, which writes it into local.properties before build).
+        val webClientId = localProperties.getProperty("FIREBASE_WEB_CLIENT_ID")
+            ?: System.getenv("FIREBASE_WEB_CLIENT_ID")
+            ?: ""
+        buildConfigField("String", "FIREBASE_WEB_CLIENT_ID", "\"$webClientId\"")
     }
 
     buildFeatures {
@@ -49,6 +63,8 @@ dependencies {
     // Core / Compose
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
     implementation("androidx.activity:activity-compose:1.9.1")
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
@@ -64,6 +80,11 @@ dependencies {
 
     // Extended Icons
     implementation("androidx.compose.material:material-icons-extended")
+
+    // Google Sign-In (Credential Manager + Google Identity Services)
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))

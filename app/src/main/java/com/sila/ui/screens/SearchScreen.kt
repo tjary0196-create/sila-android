@@ -30,20 +30,13 @@ import com.sila.ui.theme.*
 
 @Composable
 fun SearchScreen(
+    query: String,
+    results: List<User>,
+    onQueryChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onUserClick: (User) -> Unit,
     onMessageClick: (User) -> Unit
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-
-    val searchResults = listOf(
-        User("1", "Ali Hassan", "@alihassan", isOnline = true),
-        User("2", "Ali Mohsen", "@ali_mohsen", lastSeen = "Last seen 1h ago"),
-        User("3", "Alia Ahmed", "@alia_ahmed", lastSeen = "Last seen 3h ago"),
-        User("4", "Alina Saad", "@alina_saad", lastSeen = "Last seen yesterday"),
-        User("5", "Alaa Mahmoud", "@alaa_mahmoud", lastSeen = "Last seen 2d ago")
-    )
-
     Scaffold(
         topBar = {
             SilaTopBar(
@@ -60,14 +53,14 @@ fun SearchScreen(
         ) {
             Box(modifier = Modifier.padding(16.dp)) {
                 SilaSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    placeholder = "Ali"
+                    query = query,
+                    onQueryChange = onQueryChange,
+                    placeholder = "Search by username"
                 )
             }
 
             LazyColumn {
-                items(searchResults, key = { it.id }) { user ->
+                items(results, key = { it.id }) { user ->
                     AnimatedVisibility(
                         visible = true,
                         enter = fadeIn() + slideInVertically(initialOffsetY = { it / 4 })

@@ -35,6 +35,7 @@ import com.sila.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatsScreen(
+    chats: List<Chat>,
     onChatClick: (Chat) -> Unit,
     onProfileClick: () -> Unit,
     onSearchClick: () -> Unit,
@@ -56,15 +57,6 @@ fun ChatsScreen(
         User("3", "Omar", "", isOnline = false, hasStory = true),
         User("4", "Sara", "", isOnline = true, hasStory = true),
         User("5", "Kareem", "", isOnline = false, hasStory = true)
-    )
-
-    val chats = listOf(
-        Chat("1", User("1", "Ali Hassan", "", isOnline = true), "Hey! how are you?", "10:30 AM", unreadCount = 2),
-        Chat("2", User("2", "Lina Mohsen", "", isOnline = true), "Typing...", "10:29 AM", isTyping = true),
-        Chat("3", User("3", "Omar Khaled", "", isOnline = true), "", "10:28 AM", isVoiceMessage = true, voiceDuration = "0:12", unreadCount = 1),
-        Chat("4", User("4", "Sara Ali", "", isOnline = false), "See you tomorrow", "Yesterday"),
-        Chat("5", User("5", "Ahmed Samy", "", isOnline = false), "Thanks 🔥", "Yesterday"),
-        Chat("6", User("6", "Design Team", "", isOnline = false), "Omar: Check this out", "Mon", isGroup = true)
     )
 
     Scaffold(
