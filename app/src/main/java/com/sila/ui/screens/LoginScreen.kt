@@ -103,9 +103,11 @@ fun LoginScreen(
                                 localError = "نوع بيانات اعتماد غير متوقع من Google"
                             }
                         } catch (e: GetCredentialException) {
-                            localError = "تعذّر تسجيل الدخول، حاول مرة أخرى"
+                            android.util.Log.e("SilaAuth", "GetCredentialException: ${e.message}", e)
+                            localError = "خطأ في تسجيل الدخول: ${e.message ?: "حاول مرة أخرى"}"
                         } catch (e: Exception) {
-                            localError = "حدث خطأ غير متوقع"
+                            android.util.Log.e("SilaAuth", "Unexpected error: ${e.message}", e)
+                            localError = "خطأ غير متوقع: ${e.message}"
                         }
                     }
                 },
