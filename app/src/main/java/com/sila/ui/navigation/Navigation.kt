@@ -32,8 +32,7 @@ fun SilaNavigation(
         name = "Ali Hassan",
         handle = "@alihassan",
         isOnline = true,
-        bio = "Software developer & UI/UX Designer
-Coffee ☕ • Code 💻 • Travel ✈️",
+        bio = "Software developer & UI/UX Designer Coffee ☕ • Code 💻 • Travel ✈️",
         joinedDate = "Joined January 2026",
         chats = 125,
         friends = 42,
