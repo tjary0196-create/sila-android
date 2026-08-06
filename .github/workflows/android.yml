@@ -68,8 +68,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: 8.2
           cache-disabled: true
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Diagnose signing config
         run: |
@@ -78,10 +80,10 @@ jobs:
           echo "ANDROID_USER_HOME=$ANDROID_USER_HOME"
           echo "ANDROID_HOME=$ANDROID_HOME"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          gradle -q signingReport
+          ./gradlew -q signingReport
 
       - name: Build Debug APK
-        run: gradle clean assembleDebug --no-daemon --no-build-cache --rerun-tasks
+        run: ./gradlew clean assembleDebug --no-daemon --no-build-cache --rerun-tasks
         env:
           JAVA_TOOL_OPTIONS: "-Xmx2g"
 
