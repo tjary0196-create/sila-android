@@ -104,7 +104,8 @@ fun LoginScreen(
                             }
                         } catch (e: GetCredentialException) {
                             android.util.Log.e("SilaAuth", "GetCredentialException: ${e.message}", e)
-                            localError = "خطأ في تسجيل الدخول: ${e.message ?: "حاول مرة أخرى"}"
+                            android.util.Log.e("SilaAuth", "webClientId used = [${BuildConfig.FIREBASE_WEB_CLIENT_ID}]")
+                            localError = "خطأ في تسجيل الدخول: ${e.message ?: "حاول مرة أخرى"} | webClientId=[${BuildConfig.FIREBASE_WEB_CLIENT_ID}]"
                         } catch (e: Exception) {
                             android.util.Log.e("SilaAuth", "Unexpected error: ${e.message}", e)
                             localError = "خطأ غير متوقع: ${e.message}"
