@@ -30,10 +30,8 @@ class ProfileViewModel @Inject constructor(
 
     fun getUserById(uid: String): Flow<User?> {
         return kotlinx.coroutines.flow.flow {
-            when (val result = userRepository.getUserById(uid)) {
-                is kotlin.Result.Success -> emit(result.getOrNull())
-                else -> emit(null)
-            }
+            val result = userRepository.getUserById(uid)
+            emit(result.getOrNull())
         }
     }
 

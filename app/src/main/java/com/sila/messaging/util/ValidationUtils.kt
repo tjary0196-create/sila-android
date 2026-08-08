@@ -7,7 +7,7 @@ object ValidationUtils {
             name.isBlank() -> ValidationResult.Error("الاسم مطلوب")
             name.length < 2 -> ValidationResult.Error("الاسم قصير جداً (٢ حروف على الأقل)")
             name.length > 60 -> ValidationResult.Error("الاسم طويل جداً (٦٠ حرف كحد أقصى)")
-            !name.matches(Regex("^[\u0600-\u06FFa-zA-Z\s]+$")) -> 
+            !name.matches(Regex("^[\u0600-\u06FFa-zA-Z\\s]+$")) -> 
                 ValidationResult.Error("الاسم يجب أن يحتوي على حروف فقط")
             else -> ValidationResult.Success
         }

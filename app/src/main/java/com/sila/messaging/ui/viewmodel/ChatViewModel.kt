@@ -28,6 +28,9 @@ class ChatViewModel @Inject constructor(
     private val _isSending = MutableStateFlow(false)
     val isSending: StateFlow<Boolean> = _isSending
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     fun loadMessages(chatId: String) {
         viewModelScope.launch {
             chatRepository.getMessages(chatId).collect { _messages.value = it }
@@ -45,13 +48,11 @@ class ChatViewModel @Inject constructor(
     fun sendImageMessage(chatId: String, uri: Uri) {
         viewModelScope.launch {
             _isSending.value = true
-            when (val result = storageRepository.uploadChatImage(chatId, uri)) {
-                is kotlin.Result.Success -> {
-                    chatRepository.sendMediaMessage(chatId, result.getOrDefault(""), "image")
-                }
-                is kotlin.Result.Failure -> {
-                    // TODO: Show error
-                }
+            val result = storageRepository.uploadChatImage(chatId, uri)
+            if (result.isSuccess) {
+                chatRepository.sendMediaMessage(chatId, result.getOrDefault(""), "image")
+            } else {
+                _error.value = result.exceptionOrNull()?.message ?: "فشل رفع الصورة"
             }
             _isSending.value = false
         }
@@ -60,14 +61,12 @@ class ChatViewModel @Inject constructor(
     fun sendFileMessage(chatId: String, uri: Uri, fileName: String) {
         viewModelScope.launch {
             _isSending.value = true
-            when (val result = storageRepository.uploadChatFile(chatId, uri, fileName)) {
-                is kotlin.Result.Success -> {
-                    val (url, name) = result.getOrDefault("" to "")
-                    chatRepository.sendMediaMessage(chatId, url, "file", name)
-                }
-                is kotlin.Result.Failure -> {
-                    // TODO: Show error
-                }
+            val result = storageRepository.uploadChatFile(chatId, uri, fileName)
+            if (result.isSuccess) {
+                val (url, name) = result.getOrDefault("" to "")
+                chatRepository.sendMediaMessage(chatId, url, "file", name)
+            } else {
+                _error.value = result.exceptionOrNull()?.message ?: "فشل رفع الملف"
             }
             _isSending.value = false
         }

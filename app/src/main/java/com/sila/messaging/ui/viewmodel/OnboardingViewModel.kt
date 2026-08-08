@@ -30,10 +30,7 @@ class OnboardingViewModel @Inject constructor(
     val error: StateFlow<String?> = _error
 
     suspend fun checkUsername(username: String): Boolean {
-        return when (val result = userRepository.checkUsernameAvailability(username)) {
-            is kotlin.Result.Success -> result.getOrDefault(false)
-            else -> false
-        }
+        return userRepository.checkUsernameAvailability(username).getOrDefault(false)
     }
 
     fun completeOnboarding() {
@@ -56,9 +53,9 @@ class OnboardingViewModel @Inject constructor(
                 isProfileComplete = true
             )
 
-            when (val result = authRepository.createUserProfile(newUser)) {
-                is kotlin.Result.Success -> { }
-                is kotlin.Result.Failure -> _error.value = result.exceptionOrNull()?.message
+            val result = authRepository.createUserProfile(newUser)
+            if (result.isFailure) {
+                _error.value = result.exceptionOrNull()?.message
             }
             _isLoading.value = false
         }

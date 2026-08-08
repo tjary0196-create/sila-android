@@ -6,7 +6,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import java.io.File
 
@@ -39,9 +43,9 @@ fun rememberImagePicker(
 fun rememberCameraLauncher(
     onImageCaptured: (Uri) -> Unit
 ): Pair<androidx.activity.result.ActivityResultLauncher<Uri>, () -> Uri> {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val picker = remember { ImagePicker(context) }
-    var photoUri by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<Uri?>(null) }
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
