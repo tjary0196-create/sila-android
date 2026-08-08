@@ -26,6 +26,7 @@ fun SilaTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     singleLine: Boolean = true,
     maxLines: Int = 1,
+    enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     onDone: (() -> Unit)? = null
@@ -35,6 +36,7 @@ fun SilaTextField(
         onValueChange = onValueChange,
         label = { Text(label) },
         modifier = modifier.fillMaxWidth(),
+        enabled = enabled,
         isError = isError,
         supportingText = if (isError && errorMessage != null) {
             { Text(errorMessage, color = MaterialTheme.colorScheme.error) }
