@@ -33,7 +33,11 @@ class ChatViewModel @Inject constructor(
 
     fun loadMessages(chatId: String) {
         viewModelScope.launch {
-            chatRepository.getMessages(chatId).collect { _messages.value = it }
+            try {
+                chatRepository.getMessages(chatId).collect { _messages.value = it }
+            } catch (e: Exception) {
+                _error.value = "تعذّر تحميل الرسائل"
+            }
         }
     }
 

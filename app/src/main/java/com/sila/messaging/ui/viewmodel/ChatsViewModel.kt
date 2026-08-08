@@ -31,12 +31,20 @@ class ChatsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            chatRepository.getChats().collect { _chats.value = it }
+            try {
+                chatRepository.getChats().collect { _chats.value = it }
+            } catch (e: Exception) {
+                _chats.value = emptyList()
+            }
         }
         viewModelScope.launch {
-            chatRepository.getMessageRequests().collect { 
-                _messageRequests.value = it
-                _requestCount.value = it.size
+            try {
+                chatRepository.getMessageRequests().collect {
+                    _messageRequests.value = it
+                    _requestCount.value = it.size
+                }
+            } catch (e: Exception) {
+                _messageRequests.value = emptyList()
             }
         }
     }

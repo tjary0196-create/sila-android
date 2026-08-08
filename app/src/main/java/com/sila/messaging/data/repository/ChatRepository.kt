@@ -25,10 +25,10 @@ class ChatRepository @Inject constructor(
         val uid = currentUid ?: run { trySend(emptyList()); close(); return@callbackFlow }
         val listener = firestore.collection("chats")
             .whereArrayContains("participants", uid)
-            .orderBy("updatedAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
-                val list = snapshot?.documents?.mapNotNull { it.toObject(Chat::class.java) } ?: emptyList()
+                if (error != null) { trySend(emptyList()); return@addSnapshotListener }
+                val list = (snapshot?.documents?.mapNotNull { it.toObject(Chat::class.java) } ?: emptyList())
+                    .sortedByDescending { it.updatedAt?.seconds ?: 0L }
                 trySend(list)
             }
         awaitClose { listener.remove() }
@@ -40,7 +40,7 @@ class ChatRepository @Inject constructor(
             .whereEqualTo("chatId", chatId)
             .orderBy("timestamp", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
+                if (error != null) { trySend(emptyList()); return@addSnapshotListener }
                 val list = snapshot?.documents?.mapNotNull { 
                     it.toObject(Message::class.java)?.copy(messageId = it.id)
                 }?.filter { !it.deletedFor.contains(uid) } ?: emptyList()
@@ -106,10 +106,10 @@ class ChatRepository @Inject constructor(
         val listener = firestore.collection("messageRequests")
             .whereEqualTo("toUid", uid)
             .whereEqualTo("status", "pending")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
-                val list = snapshot?.documents?.mapNotNull { it.toObject(MessageRequest::class.java) } ?: emptyList()
+                if (error != null) { trySend(emptyList()); return@addSnapshotListener }
+                val list = (snapshot?.documents?.mapNotNull { it.toObject(MessageRequest::class.java) } ?: emptyList())
+                    .sortedByDescending { it.timestamp.seconds }
                 trySend(list)
             }
         awaitClose { listener.remove() }

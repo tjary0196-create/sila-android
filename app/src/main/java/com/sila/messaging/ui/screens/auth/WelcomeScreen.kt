@@ -12,7 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,10 +38,7 @@ fun WelcomeScreen(onNavigateToLogin: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 16.dp))
         Spacer(modifier = Modifier.weight(1f))
         SilaButton(text = "تسجيل الدخول باستخدام Google", onClick = onNavigateToLogin, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = { }) {
-            Text(text = "متابعة كضيف", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+
         Spacer(modifier = Modifier.height(24.dp))
         Text(text = "بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
