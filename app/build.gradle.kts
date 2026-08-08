@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -101,10 +103,10 @@ dependencies {
 
 // Helper to read local.properties
 fun getLocalProperty(key: String): String {
-    val properties = java.util.Properties()
+    val properties = Properties()
     val localProperties = project.rootProject.file("local.properties")
     if (localProperties.exists()) {
         properties.load(localProperties.inputStream())
     }
-    return properties.getProperty(key, "")
+    return (System.getenv(key) ?: properties.getProperty(key)) ?: ""
 }
