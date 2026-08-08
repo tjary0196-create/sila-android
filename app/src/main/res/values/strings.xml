@@ -1,4 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Sila</string>
+
+    <!-- Auth -->
+    <string name="welcome_title">Welcome to Sila</string>
+    <string name="welcome_subtitle">Secure and fast messaging app designed to protect your privacy</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="continue_guest">Continue as Guest</string>
+    <string name="terms_agreement">By continuing, you agree to Terms of Use and Privacy Policy</string>
+    <string name="login_title">Sign In</string>
+    <string name="select_google_account">Select a Google account to continue</string>
+    <string name="continue_with_google">Continue with Google</string>
+
+    <!-- Onboarding -->
+    <string name="complete_profile">Complete Profile</string>
+    <string name="add_photo">Add your profile photo (optional)</string>
+    <string name="what_is_your_name">What is your name?</string>
+    <string name="name_hint">Full name</string>
+    <string name="name_length_hint">Name must be between 2 and 60 characters</string>
+    <string name="choose_username">Choose a unique username</string>
+    <string name="username_hint">Username</string>
+    <string name="username_rules">Allowed: English letters, numbers, _ and . only</string>
+    <string name="username_available">Available</string>
+    <string name="username_taken">Not available</string>
+    <string name="tell_us_about_you">Tell us about yourself</string>
+    <string name="bio_hint">Bio (optional)</string>
+    <string name="bio_max">120 characters max</string>
+    <string name="choose_language">Choose your preferred language</string>
+    <string name="setup_complete">Setup Complete!</string>
+    <string name="setup_success">Your information has been saved successfully. You can now start using Sila.</string>
+    <string name="start_chatting">Start Chatting</string>
+    <string name="next">Next</string>
+    <string name="skip">Skip</string>
+    <string name="back">Back</string>
+
+    <!-- Main -->
+    <string name="chats">Chats</string>
+    <string name="calls">Calls</string>
+    <string name="notifications">Notifications</string>
+    <string name="settings">Settings</string>
+    <string name="search">Search</string>
+    <string name="all">All</string>
+    <string name="unread">Unread</string>
+    <string name="groups">Groups</string>
+    <string name="requests">Requests</string>
+    <string name="online">Online</string>
+    <string name="last_seen">Last seen</string>
+    <string name="typing">Typing…</string>
+
+    <!-- Chat -->
+    <string name="type_message">Type a message…</string>
+    <string name="reply">Reply</string>
+    <string name="forward">Forward</string>
+    <string name="delete_for_me">Delete for Me</string>
+    <string name="delete_for_everyone">Delete for Everyone</string>
+    <string name="delete_confirm">Delete this message for everyone?</string>
+    <string name="message_deleted">This message was deleted</string>
+    <string name="sent">Sent</string>
+    <string name="delivered">Delivered</string>
+    <string name="read">Read</string>
+    <string name="failed">Failed</string>
+    <string name="image">Image</string>
+    <string name="file">File</string>
+    <string name="voice">Voice</string>
+
+    <!-- Profile -->
+    <string name="my_profile">My Profile</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="user_profile">User Profile</string>
+    <string name="conversations">Conversations</string>
+    <string name="friends">Friends</string>
+    <string name="share_profile">Share My Profile</string>
+    <string name="logout">Log Out</string>
+    <string name="phone">Phone</string>
+    <string name="country">Country</string>
+    <string name="birth_date">Birth Date</string>
+    <string name="save">Save</string>
+    <string name="message">Message</string>
+    <string name="block">Block</string>
+    <string name="block_confirm">Are you sure you want to block %1$s?</string>
+    <string name="report">Report</string>
+    <string name="report_confirm">Our team will review this report. Continue?</string>
+
+    <!-- Settings -->
+    <string name="privacy_security">Privacy &amp; Security</string>
+    <string name="blocked_users">Blocked Users</string>
+    <string name="language">Language</string>
+    <string name="active_sessions">Active Sessions</string>
+    <string name="notification_settings">Notification Settings</string>
+    <string name="show_phone">Show Phone Number</string>
+    <string name="show_birth_date">Show Birth Date</string>
+    <string name="show_last_seen">Show Last Seen</string>
+    <string name="allow_add_groups">Allow Adding to Groups</string>
+    <string name="read_receipts">Read Receipts</string>
+    <string name="no_blocked">No blocked users</string>
+    <string name="blocked_subtitle">Blocked users will appear here</string>
+    <string name="unblock">Unblock</string>
+    <string name="unblock_confirm">Unblock %1$s?</string>
+    <string name="this_device">This Device</string>
+    <string name="logout_other_devices">Log out from all other devices</string>
+    <string name="logout_other_confirm">Log out from all other devices?</string>
+    <string name="enable_notifications">Enable Notifications</string>
+    <string name="message_notifications">Message Notifications</string>
+    <string name="group_notifications">Group Notifications</string>
+    <string name="call_notifications">Call Notifications</string>
+
+    <!-- Calls -->
+    <string name="calls_coming_soon">Calls Coming Soon</string>
+    <string name="calls_need_webrtc">Voice/video calls require WebRTC or a third-party service (Agora/Twilio). This is a preview UI only.</string>
+
+    <!-- Errors -->
+    <string name="error_no_internet">No internet connection. Please check your network and try again.</string>
+    <string name="error_cancelled">Account selection was cancelled.</string>
+    <string name="error_no_credentials">No Google account available. Add an account in device settings.</string>
+    <string name="error_general">An unexpected error occurred. Please try again.</string>
+    <string name="error_server">Server error. Please try again later.</string>
+    <string name="retry">Retry</string>
+    <string name="loading">Loading…</string>
+    <string name="no_requests">No requests</string>
+    <string name="requests_subtitle">Unread requests will appear here until you accept them</string>
+    <string name="accept">Accept</string>
+    <string name="decline">Decline</string>
+
+    <!-- Security -->
+    <string name="e2ee_notice">End-to-End Encryption Notice</string>
+    <string name="e2ee_explanation">Firebase provides transport encryption (TLS/HTTPS) only. True E2EE requires Signal Protocol implementation. This is a planned future enhancement.</string>
 </resources>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sila</string>
+
+    <!-- Auth -->
+    <string name="welcome_title">مرحباً بك في Sila</string>
+    <string name="welcome_subtitle">تطبيق مراسلة آمن وسريع مصمم لحماية خصوصيتك</string>
+    <string name="sign_in_google">تسجيل الدخول باستخدام Google</string>
+    <string name="continue_guest">متابعة كضيف</string>
+    <string name="terms_agreement">بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية</string>
+    <string name="login_title">تسجيل الدخول</string>
+    <string name="select_google_account">اختر حساب Google للمتابعة</string>
+    <string name="continue_with_google">المتابعة عبر Google</string>
+
+    <!-- Onboarding -->
+    <string name="complete_profile">إكمال الملف الشخصي</string>
+    <string name="add_photo">أضف صورتك الشخصية (اختياري)</string>
+    <string name="what_is_your_name">ما هو اسمك؟</string>
+    <string name="name_hint">الاسم الكامل</string>
+    <string name="name_length_hint">يجب أن يكون الاسم بين ٢ و٦٠ حرف</string>
+    <string name="choose_username">اختر اسم مستخدم فريد</string>
+    <string name="username_hint">اسم المستخدم</string>
+    <string name="username_rules">مسموح: حروف إنجليزية، أرقام، _ و . فقط</string>
+    <string name="username_available">متاح</string>
+    <string name="username_taken">غير متاح</string>
+    <string name="tell_us_about_you">أخبرنا عن نفسك</string>
+    <string name="bio_hint">نبذة تعريفية (اختياري)</string>
+    <string name="bio_max">١٢٠ حرف كحد أقصى</string>
+    <string name="choose_language">اختر لغتك المفضلة</string>
+    <string name="setup_complete">تم الإعداد بنجاح!</string>
+    <string name="setup_success">تم حفظ معلوماتك بنجاح. يمكنك الآن بدء استخدام Sila.</string>
+    <string name="start_chatting">ابدأ المحادثة</string>
+    <string name="next">التالي</string>
+    <string name="skip">تخطي</string>
+    <string name="back">رجوع</string>
+
+    <!-- Main -->
+    <string name="chats">المحادثات</string>
+    <string name="calls">المكالمات</string>
+    <string name="notifications">الإشعارات</string>
+    <string name="settings">الإعدادات</string>
+    <string name="search">بحث</string>
+    <string name="all">الكل</string>
+    <string name="unread">غير مقروءة</string>
+    <string name="groups">مجموعات</string>
+    <string name="requests">الطلبات</string>
+    <string name="online">متصل الآن</string>
+    <string name="last_seen">آخر ظهور</string>
+    <string name="typing">يكتب…</string>
+
+    <!-- Chat -->
+    <string name="type_message">اكتب رسالة…</string>
+    <string name="reply">رد</string>
+    <string name="forward">توجيه</string>
+    <string name="delete_for_me">حذف عندي</string>
+    <string name="delete_for_everyone">حذف للجميع</string>
+    <string name="delete_confirm">حذف هذه الرسالة عند الجميع؟</string>
+    <string name="message_deleted">تم حذف هذه الرسالة</string>
+    <string name="sent">تم الإرسال</string>
+    <string name="delivered">تم التسليم</string>
+    <string name="read">تمت القراءة</string>
+    <string name="failed">فشل</string>
+    <string name="image">صورة</string>
+    <string name="file">ملف</string>
+    <string name="voice">رسالة صوتية</string>
+
+    <!-- Profile -->
+    <string name="my_profile">ملفي الشخصي</string>
+    <string name="edit_profile">تعديل الملف الشخصي</string>
+    <string name="user_profile">ملف مستخدم آخر</string>
+    <string name="conversations">محادثة</string>
+    <string name="friends">الصدقاء</string>
+    <string name="share_profile">مشاركة ملفي الشخصي</string>
+    <string name="logout">تسجيل الخروج</string>
+    <string name="phone">رقم الهاتف</string>
+    <string name="country">الدولة</string>
+    <string name="birth_date">تاريخ الميلاد</string>
+    <string name="save">حفظ</string>
+    <string name="message">مراسلة</string>
+    <string name="block">حظر</string>
+    <string name="block_confirm">هل أنت متأكد من حظر %1$s؟</string>
+    <string name="report">إبلاغ</string>
+    <string name="report_confirm">سيتم مراجعة البلاغ من فريقنا. هل تريد المتابعة؟</string>
+
+    <!-- Settings -->
+    <string name="privacy_security">الخصوصية والأمان</string>
+    <string name="blocked_users">المحظورون</string>
+    <string name="language">اللغة</string>
+    <string name="active_sessions">الأجهزة النشطة</string>
+    <string name="notification_settings">الإشعارات</string>
+    <string name="show_phone">أظهر رقم الهاتف</string>
+    <string name="show_birth_date">أظهر تاريخ الميلاد</string>
+    <string name="show_last_seen">أظهر آخر ظهور</string>
+    <string name="allow_add_groups">السماح بإضافتي للمجموعات</string>
+    <string name="read_receipts">تأكيد القراءة</string>
+    <string name="no_blocked">لا يوجد محظورون</string>
+    <string name="blocked_subtitle">المستخدمون المحظورون سيظهرون هنا</string>
+    <string name="unblock">إلغاء الحظر</string>
+    <string name="unblock_confirm">إلغاء حظر %1$s؟</string>
+    <string name="this_device">هذا الجهاز</string>
+    <string name="logout_other_devices">تسجيل الخروج من الأجهزة الأخرى</string>
+    <string name="logout_other_confirm">تسجيل الخروج من جميع الأجهزة الأخرى؟</string>
+    <string name="enable_notifications">تمكين الإشعارات</string>
+    <string name="message_notifications">إشعارات الرسائل</string>
+    <string name="group_notifications">إشعارات المجموعات</string>
+    <string name="call_notifications">إشعارات المكالمات</string>
+
+    <!-- Calls -->
+    <string name="calls_coming_soon">قيد التطوير</string>
+    <string name="calls_need_webrtc">ميزة المكالمات تحتاج ربط بـ WebRTC أو خدمة طرف ثالث (Agora/Twilio). هذه الواجهة استعراضية فقط.</string>
+
+    <!-- Errors -->
+    <string name="error_no_internet">لا يوجد اتصال بالإنترنت. تأكد من الشبكة وأعد المحاولة.</string>
+    <string name="error_cancelled">تم إلغاء اختيار الحساب.</string>
+    <string name="error_no_credentials">لا يوجد حساب Google متاح. أضف حساباً في إعدادات الجهاز.</string>
+    <string name="error_general">حدث خطأ غير متوقع. أعد المحاولة.</string>
+    <string name="error_server">خطأ من الخادم. أعد المحاولة لاحقاً.</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="loading">جاري التحميل…</string>
+    <string name="no_requests">لا توجد طلبات</string>
+    <string name="requests_subtitle">الطلبات غير المقروءة ستظهر هنا حتى تقبلها</string>
+    <string name="accept">قبول</string>
+    <string name="decline">حذف</string>
+
+    <!-- Security -->
+    <string name="e2ee_notice">تنبيه التشفير</string>
+    <string name="e2ee_explanation">Firebase يوفر تشفير النقل (TLS/HTTPS) فقط. التشفير الحقيقي End-to-End يتطلب تنفيذ بروتوكول Signal. هذا تحسين مخطط له في المستقبل.</string>
+</resources>

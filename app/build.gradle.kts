@@ -1,36 +1,23 @@
-import java.util.Properties
-import java.io.FileInputStream
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
     id("com.google.gms.google-services")
 }
 
-val localProperties = Properties().apply {
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        FileInputStream(localPropertiesFile).use { load(it) }
-    }
-}
-
 android {
-    namespace = "com.sila"
+    namespace = "com.sila.messaging"
     compileSdk = 34
 
     defaultConfig {
         applicationId = "com.sila.messaging"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
-        // Read from local.properties locally, or from the FIREBASE_WEB_CLIENT_ID env var in CI
-        // (see .github/workflows/android.yml, which writes it into local.properties before build).
-        val webClientId = localProperties.getProperty("FIREBASE_WEB_CLIENT_ID")
-            ?: System.getenv("FIREBASE_WEB_CLIENT_ID")
-            ?: ""
-        buildConfigField("String", "FIREBASE_WEB_CLIENT_ID", "\"$webClientId\"")
+        buildConfigField("String", "FIREBASE_WEB_CLIENT_ID", "\"${getLocalProperty("FIREBASE_WEB_CLIENT_ID")}\"")
     }
 
     buildFeatures {
@@ -39,67 +26,85 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 
     kotlinOptions {
         jvmTarget = "1.8"
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
 }
 
 dependencies {
-    // Core / Compose
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
-    implementation("androidx.activity:activity-compose:1.9.1")
-    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    // Core
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.activity:activity-compose:1.8.2")
+
+    // Compose BOM
+    val composeBom = platform("androidx.compose:compose-bom:2024.02.00")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+
+    // Compose UI
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
-    // Coil for images
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
-    // Extended Icons
-    implementation("androidx.compose.material:material-icons-extended")
-
-    // Google Sign-In (Credential Manager + Google Identity Services)
-    implementation("androidx.credentials:credentials:1.3.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    // Hilt DI
+    implementation("com.google.dagger:hilt-android:2.50")
+    ksp("com.google.dagger:hilt-compiler:2.50")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.firebase:firebase-functions-ktx")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
-    implementation("com.google.firebase:firebase-appcheck-debug")
 
-    // Coroutines <-> Play Services Tasks (needed for .await())
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    // Google Sign-In / Credential Manager
+    implementation("androidx.credentials:credentials:1.2.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
 
-    // Debug tooling
+    // Image Loading
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+// Helper to read local.properties
+fun getLocalProperty(key: String): String {
+    val properties = java.util.Properties()
+    val localProperties = project.rootProject.file("local.properties")
+    if (localProperties.exists()) {
+        properties.load(localProperties.inputStream())
+    }
+    return properties.getProperty(key, "")
 }

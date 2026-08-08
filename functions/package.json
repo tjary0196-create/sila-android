@@ -1,24 +1,11 @@
 {
   "name": "sila-functions",
-  "description": "Server-side Cloud Functions for Sila — currently just the imgbb upload proxy that keeps the API key off the client.",
-  "engines": {
-    "node": "20"
-  },
-  "main": "lib/index.js",
-  "scripts": {
-    "build": "tsc",
-    "serve": "npm run build && firebase emulators:start --only functions",
-    "deploy": "npm run build && firebase deploy --only functions",
-    "logs": "firebase functions:log"
-  },
+  "version": "1.0.0",
   "dependencies": {
     "firebase-admin": "^12.0.0",
-    "firebase-functions": "^5.0.0",
-    "node-fetch": "^2.7.0"
+    "firebase-functions": "^4.5.0"
   },
-  "devDependencies": {
-    "typescript": "^5.4.0",
-    "@types/node-fetch": "^2.6.11"
-  },
-  "private": true
+  "engines": {
+    "node": "20"
+  }
 }

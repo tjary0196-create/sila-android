@@ -1,0 +1,43 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Profile photos
+    match /profile_photos/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // Chat images
+    match /chat_images/{chatId}/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && 
+        exists(/databases/(default)/documents/chats/$(chatId)) &&
+        request.auth.uid in get(/databases/(default)/documents/chats/$(chatId)).data.participants;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Chat files
+    match /chat_files/{chatId}/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && 
+        exists(/databases/(default)/documents/chats/$(chatId)) &&
+        request.auth.uid in get(/databases/(default)/documents/chats/$(chatId)).data.participants;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Voice messages
+    match /voice_messages/{chatId}/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && 
+        exists(/databases/(default)/documents/chats/$(chatId)) &&
+        request.auth.uid in get(/databases/(default)/documents/chats/$(chatId)).data.participants;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+  }
+}
